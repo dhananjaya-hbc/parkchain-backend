@@ -1,5 +1,5 @@
 {
-  "name": "parking-backend",
+  "name": "park_chain_backend",
   "version": "1.0.0",
   "description": "Parking spot booking backend with XRPL payments",
   "main": "index.js",
