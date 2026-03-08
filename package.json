@@ -1,31 +1,27 @@
 {
-  "name": "park_chain_backend",
+  "name": "parking-backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "Parking spot booking backend with XRPL payments",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "jest --runInBand --coverage"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "module",
-  "engines": {
-    "node": ">=14"
+    "migrate": "node src/config/migrate.js",
+    "generate-admin-wallet": "node src/scripts/generateAdminWallet.js"
   },
   "dependencies": {
-    "bcryptjs": "^3.0.3",
+    "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
-    "express": "^4.21.2",
+    "express": "^4.21.0",
+    "helmet": "^7.2.0",
     "jsonwebtoken": "^9.0.2",
-    "pg": "^8.16.3"
+    "morgan": "^1.10.0",
+    "pg": "^8.20.0",
+    "uuid": "^10.0.0",
+    "xrpl": "^3.1.0"
   },
   "devDependencies": {
-
-    "nodemon": "^3.1.10"
-
+    "nodemon": "^3.1.4"
   }
 }
