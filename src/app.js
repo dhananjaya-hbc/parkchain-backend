@@ -11,7 +11,6 @@ app.use(express.json());
 
 // --- ROUTES ---
 
-// Basic health check
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -20,26 +19,38 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Database health check
-// This route tests if the database is working
 app.get('/health/db', async (req, res) => {
   try {
-    const result = await query('SELECT NOW() as current_time');
+    const timeResult = await query('SELECT NOW() as current_time');
+    const tablesResult = await query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+      ORDER BY table_name
+    `);
+
+    const tableDetails = [];
+    for (const row of tablesResult.rows) {
+      const countResult = await query(`SELECT COUNT(*) as count FROM ${row.table_name}`);
+      tableDetails.push({
+        name: row.table_name,
+        rows: parseInt(countResult.rows[0].count)
+      });
+    }
+
     res.json({
       status: 'ok',
-      message: 'Database is connected!',
-      databaseTime: result.rows[0].current_time
+      databaseTime: timeResult.rows[0].current_time,
+      tables: tableDetails
     });
   } catch (error) {
-    res.status(500).json({
-      status: 'error',
-      message: 'Database connection failed!',
-      error: error.message
-    });
+    res.status(500).json({ status: 'error', error: error.message });
   }
 });
 
-// Home route
+// AUTH ROUTES
+app.use('/api/auth', require('./routes/AuthRoutes'));
+
 app.get('/', (req, res) => {
   res.json({ message: 'Parking Payment API' });
 });

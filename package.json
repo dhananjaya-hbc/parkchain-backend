@@ -1,12 +1,14 @@
 {
-  "name": "parking-backend",
+  "name": "park_chain_backend",
   "version": "1.0.0",
+  "type": "commonjs",
   "description": "Parking spot booking backend with XRPL payments",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
     "migrate": "node src/config/migrate.js",
+    "seed:admin": "node src/scripts/seedAdmin.js",
     "generate-admin-wallet": "node src/scripts/generateAdminWallet.js"
   },
   "dependencies": {
@@ -15,7 +17,8 @@
     "dotenv": "^16.6.1",
     "express": "^4.21.0",
     "helmet": "^7.2.0",
-    "jsonwebtoken": "^9.0.2",
+    "jose": "^6.2.0",
+    "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.0",
     "pg": "^8.20.0",
     "uuid": "^10.0.0",
