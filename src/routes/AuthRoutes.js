@@ -24,53 +24,65 @@ if (process.env.NODE_ENV === 'development') {
   const jwt = require('jsonwebtoken');
   const { query } = require('../config/db');
 
-  // POST /api/auth/dev/token
-  // Body: { "email": "driver@gmail.com" }
-  // Returns: a JWT token for testing
+  // Existing dev token route
   router.post('/dev/token', async (req, res) => {
     try {
       const { email } = req.body;
-
       if (!email) {
         return res.status(400).json({ error: 'Email is required.' });
       }
-
-      // Find user by email
       const result = await query(
-        `SELECT id, email, name, role, wallet_address 
-         FROM users WHERE email = $1`,
+        'SELECT id, email, name, role, wallet_address FROM users WHERE email = $1',
         [email]
       );
-
       if (result.rows.length === 0) {
-        return res.status(404).json({ 
-          error: 'User not found. Register first via POST /api/auth/web3auth' 
-        });
+        return res.status(404).json({ error: 'User not found.' });
       }
-
       const user = result.rows[0];
-
-      // Generate a test JWT
       const token = jwt.sign(
         { userId: user.id, role: user.role },
         process.env.JWT_SECRET,
         { expiresIn: '1d' }
       );
-
       console.log(`🧪 DEV TOKEN generated for ${user.role}: ${user.email}`);
+      res.json({ message: '⚠️ DEV ONLY', token, user });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
 
+  // NEW: Reset wallet for testing
+  router.post('/dev/reset-wallet', async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ error: 'Email is required.' });
+      }
+
+      const result = await query(
+        `UPDATE users 
+         SET wallet_address = NULL, wallet_seed = NULL, updated_at = NOW()
+         WHERE email = $1
+         RETURNING email, role, wallet_address`,
+        [email]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'User not found.' });
+      }
+
+      console.log(`🧪 DEV: Wallet reset for ${result.rows[0].email}`);
       res.json({
-        message: '⚠️ DEV ONLY - Do not use in production!',
-        token,
-        user
+        message: 'Wallet cleared. You can now generate a real one.',
+        user: result.rows[0]
       });
-
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
   });
 
   console.log('⚠️  DEV MODE: Test token route enabled at POST /api/auth/dev/token');
+  console.log('⚠️  DEV MODE: Wallet reset route enabled at POST /api/auth/dev/reset-wallet');
 }
 
 module.exports = router;

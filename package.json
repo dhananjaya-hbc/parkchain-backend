@@ -9,7 +9,8 @@
     "dev": "nodemon index.js",
     "migrate": "node src/config/migrate.js",
     "seed:admin": "node src/scripts/seedAdmin.js",
-    "generate-admin-wallet": "node src/scripts/generateAdminWallet.js"
+    "generate-admin-wallet": "node src/scripts/generateAdminWallet.js",
+    "generate:wallet": "node src/scripts/generateAdminWallet.js" 
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

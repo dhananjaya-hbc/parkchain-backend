@@ -54,6 +54,7 @@ app.get('/health/db', async (req, res) => {
 app.use('/api/auth', require('./routes/AuthRoutes'));
 app.use('/api/spots', require('./routes/SpotRoutes'));
 app.use('/api/bookings', require('./routes/BookingRoutes'));
+app.use('/api/payments', require('./routes/Web3Routes'));
 
 app.get('/', (req, res) => {
   res.json({
@@ -61,7 +62,8 @@ app.get('/', (req, res) => {
     routes: {
       auth: '/api/auth',
       spots: '/api/spots',
-      bookings: '/api/bookings'
+      bookings: '/api/bookings',
+      payments: '/api/payments'
     }
   });
 });

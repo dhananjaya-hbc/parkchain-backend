@@ -53,6 +53,8 @@ CREATE TABLE IF NOT EXISTS users (
     -- XRPL Wallet (comes from Web3Auth for drivers/sellers)
     -- For admin: set manually in .env (not stored here)
     wallet_address VARCHAR(60),
+    wallet_seed VARCHAR(100),     
+
 
     -- Profile image from social login
     profile_image TEXT,
