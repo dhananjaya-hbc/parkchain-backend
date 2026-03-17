@@ -9,6 +9,8 @@
 
 const Booking = require('../models/Booking');
 const Spot = require('../models/Spot');
+const FraudDetectionService = require('../services/FraudDetectionService');
+
 
 // ============================================
 // POST /api/bookings — Create a booking (driver only)
@@ -298,11 +300,46 @@ const cancelBooking = async (req, res) => {
   }
 };
 
+// ============================================
+// POST /api/bookings/:id/fraud-check — AI Fraud Detection
+// ============================================
+const fraudCheck = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found.' });
+    }
+
+    if (booking.driver_id !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+
+    const result = await FraudDetectionService.analyzeBooking(
+      booking.driver_id,
+      booking.spot_id,
+      booking.start_time,
+      booking.end_time,
+      booking.total_price_xrp
+    );
+
+    res.json({
+      bookingId: req.params.id,
+      ...result
+    });
+  } catch (error) {
+    console.error('Fraud check error:', error.message);
+    res.status(500).json({ error: 'Fraud check failed.' });
+  }
+};
+
 module.exports = {
   createBooking,
   getBookings,
   getBookingById,
   checkIn,
   checkOut,
-  cancelBooking
+  cancelBooking,
+  fraudCheck,
+        
 };
