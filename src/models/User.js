@@ -64,12 +64,12 @@ class User {
   // ============================================
 
   // Create driver or seller (via Web3Auth — NO password)
-  static async createWeb3AuthUser({ email, name, role, walletAddress, web3authSub, profileImage }) {
-    // ★ UPDATED: Now saving the Web3Auth/Xaman derived wallet_address on creation
+    static async createWeb3AuthUser({ email, name, role, walletAddress, web3authSub, profileImage }) {
     const result = await query(
       `INSERT INTO users (email, name, role, wallet_address, web3auth_sub, profile_image)
        VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id, email, name, phone, role, wallet_address, web3auth_sub, profile_image, is_verified, created_at`,[email, name, role, walletAddress, web3authSub, profileImage]
+       RETURNING id, email, name, phone, role, wallet_address, web3auth_sub, profile_image, is_verified, created_at`,
+      [email, name, role, walletAddress || null, web3authSub, profileImage]
     );
     return result.rows[0];
   }

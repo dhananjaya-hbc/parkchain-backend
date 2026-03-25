@@ -179,7 +179,6 @@ const generateWallet = async (req, res) => {
 };
 
 // GET /api/payments/balance
-// GET /api/payments/balance
 const getBalance = async (req, res) => {
   try {
     const walletDetails = await User.getWalletDetails(req.user.id);
@@ -197,7 +196,7 @@ const getBalance = async (req, res) => {
     res.json({
       walletAddress: walletDetails.wallet_address,
       balanceXrp: balance,
-      hasSeed: !!walletDetails.wallet_seed  // Tells Flutter if user can make payments
+      hasSeed: !!walletDetails.wallet_seed
     });
   } catch (error) {
     console.error('Get balance error:', error.message);

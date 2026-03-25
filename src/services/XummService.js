@@ -89,6 +89,60 @@ class XummService {
       throw error;
     }
   }
+    // ============================================
+  // Create a PAYMENT payload (not just SignIn)
+  // ============================================
+  async createPaymentPayload(fromAddress, toAddress, amountDrops, bookingId) {
+    try {
+      const payload = await this.sdk.payload.create({
+        txjson: {
+          TransactionType: 'Payment',
+          Account: fromAddress,
+          Destination: toAddress,
+          Amount: amountDrops,
+          Memos: [
+            {
+              Memo: {
+                MemoType: Buffer.from('text/plain', 'utf8').toString('hex').toUpperCase(),
+                MemoData: Buffer.from(`parkchain:booking:${bookingId}`, 'utf8').toString('hex').toUpperCase()
+              }
+            }
+          ]
+        },
+        options: {
+          return_url: {
+            app: `parkchain://payment?bookingId=${bookingId}&uuid={id}`,
+            web: null
+          }
+        }
+      });
+
+      console.log('💳 XUMM Payment payload created');
+      console.log(`   UUID: ${payload.uuid}`);
+      console.log(`   Amount: ${amountDrops} drops`);
+
+      return {
+        uuid: payload.uuid,
+        deepLink: payload.next.always,
+        qrUrl: payload.refs.qr_png,
+      };
+    } catch (error) {
+      console.error('❌ XUMM payment payload failed:', error.message);
+      throw error;
+    }
+  }
+
+  // ============================================
+  // Get full payload details (including tx hash)
+  // ============================================
+  async getPayloadDetails(payloadUuid) {
+    try {
+      return await this.sdk.payload.get(payloadUuid);
+    } catch (error) {
+      console.error('❌ Get payload details failed:', error.message);
+      return null;
+    }
+  }
 }
 
 // Export singleton
