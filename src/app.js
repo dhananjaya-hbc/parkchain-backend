@@ -11,6 +11,7 @@ app.use(express.json());
 
 // --- ROUTES ---
 
+
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -52,10 +53,11 @@ app.get('/health/db', async (req, res) => {
 
 // API Routes
 app.use('/api/auth', require('./routes/AuthRoutes'));
-app.use('/api/auth/xumm', require('./routes/XummRoutes'));  // ★ NEW
+app.use('/api/auth/xumm', require('./routes/XummRoutes')); 
 app.use('/api/spots', require('./routes/SpotRoutes'));
 app.use('/api/bookings', require('./routes/BookingRoutes'));
 app.use('/api/payments', require('./routes/Web3Routes'));
+app.use('/api/navigation', require('./routes/NavigationRoutes'));
 
 app.get('/', (req, res) => {
   res.json({
@@ -64,7 +66,8 @@ app.get('/', (req, res) => {
       auth: '/api/auth',
       spots: '/api/spots',
       bookings: '/api/bookings',
-      payments: '/api/payments'
+      payments: '/api/payments',
+      navigation: '/api/navigation'
     }
   });
 });
