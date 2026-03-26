@@ -259,12 +259,39 @@ const verifyTransaction = async (req, res) => {
     res.status(500).json({ error: 'Failed to verify transaction.' });
   }
 };
+// src/controllers/PaymentController.js
 
+// Add this new function at the end, before module.exports
+
+const getSellerTransactions = async (req, res) => {
+  try {
+    const sellerId = req.user.id;
+    console.log('🔍 Fetching transactions for seller ID:', sellerId);
+    
+    const transactions = await Transaction.findBySellerId(sellerId);
+    console.log('📊 Found transactions:', transactions.length);
+    
+    const earnings = await Transaction.getSellerEarnings(sellerId);
+
+    res.json({ 
+      transactions, 
+      total: transactions.length,
+      earnings
+    });
+  } catch (error) {
+    console.error('❌ Get seller transactions error:', error);
+    res.status(500).json({ error: 'Failed to fetch seller transactions.' });
+  }
+};
+
+
+// Update module.exports to include the new function
 module.exports = {
   processPayment,
   generateWallet,
   getBalance,
   getAdminBalance,
   getTransactions,
+  getSellerTransactions, // ← ADD THIS
   verifyTransaction
 };
