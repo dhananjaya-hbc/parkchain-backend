@@ -270,6 +270,39 @@ class Booking {
     );
     return result.rows[0] || null;
   }
+
+    // ============================================
+  // COUNT OVERLAPPING BOOKINGS for a time range
+  // ============================================
+  // Checks how many active bookings overlap with the requested time
+  //
+  // Time overlap logic:
+  //   Existing:  |----A----|
+  //   Request 1:      |----B----|     ← OVERLAPS (B starts before A ends)
+  //   Request 2:                |--C--|  ← NO OVERLAP (C starts after A ends)
+  //   Request 3: |--D--|              ← OVERLAPS (D ends after A starts)
+  //
+  // SQL: A overlaps B when: A.start < B.end AND A.end > B.start
+  static async countOverlapping(spotId, startTime, endTime, excludeBookingId = null) {
+    let sql = `
+      SELECT COUNT(*) as count 
+      FROM bookings 
+      WHERE spot_id = $1 
+        AND start_time < $3 
+        AND end_time > $2
+        AND booking_status IN ('pending', 'confirmed', 'active')
+    `;
+    const params = [spotId, startTime, endTime];
+
+    // Exclude a specific booking (useful for rebooking)
+    if (excludeBookingId) {
+      sql += ` AND id != $4`;
+      params.push(excludeBookingId);
+    }
+
+    const result = await query(sql, params);
+    return parseInt(result.rows[0].count);
+  }
 }
 
 module.exports = Booking;

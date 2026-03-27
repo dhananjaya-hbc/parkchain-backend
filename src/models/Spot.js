@@ -80,9 +80,8 @@ class Spot {
       `SELECT s.*, u.name AS owner_name
        FROM spots s
        JOIN users u ON s.owner_id = u.id
-       WHERE s.is_available = true 
+       WHERE s.is_available = true
          AND s.is_approved = true
-         AND s.available_slots > 0
        ORDER BY s.created_at DESC`
     );
     return result.rows;

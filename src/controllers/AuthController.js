@@ -25,11 +25,9 @@ const web3AuthLogin = async (req, res) => {
 
     const userRole = role === 'seller' ? 'seller' : 'driver';
 
-    // Check if user exists
     let user = await User.findByWeb3AuthOrEmail(web3auth_sub, email);
 
     if (user) {
-      // Existing user — update their info
       user = await User.updateWeb3AuthInfo(user.id, {
         name,
         walletAddress: wallet_address,
@@ -38,7 +36,6 @@ const web3AuthLogin = async (req, res) => {
       });
       console.log(`🔑 Existing ${user.role} logged in: ${user.email}`);
     } else {
-      // New user — create account
       user = await User.createWeb3AuthUser({
         email,
         name,
@@ -50,11 +47,14 @@ const web3AuthLogin = async (req, res) => {
       console.log(`🆕 New ${user.role} registered: ${user.email}`);
     }
 
+    // ★ GENERATE JWT TOKEN — This is the key fix! ★
+    const token = generateToken(user.id, user.role);
+
     res.status(200).json({
-      message: 'User registered/updated successfully',
+      message: 'Authentication successful',
+      token,    // ← NEW: JWT token for all future API calls
       user
     });
-
   } catch (error) {
     console.error('Web3Auth login error:', error.message);
     if (error.code === '23505') {
@@ -105,10 +105,10 @@ const adminLogin = async (req, res) => {
         email: admin.email,
         name: admin.name,
         role: admin.role,
+        wallet_address: admin.wallet_address,
         created_at: admin.created_at
       }
     });
-
   } catch (error) {
     console.error('Admin login error:', error.message);
     res.status(500).json({ error: 'Login failed. Please try again.' });

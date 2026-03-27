@@ -2,7 +2,6 @@
 const xrplService = require('../services/XrplService');
 const Booking = require('../models/Booking');
 const Transaction = require('../models/Transaction');
-const Spot = require('../models/Spot');
 const User = require('../models/User');
 require('dotenv').config();
 
@@ -31,18 +30,19 @@ const processPayment = async (req, res) => {
       });
     }
 
-    // Get driver's wallet using User model
     const driverWallet = await User.getWalletDetails(driverId);
 
-    if (!driverWallet.wallet_address || !driverWallet.wallet_seed) {
+    if (!driverWallet || !driverWallet.wallet_address || !driverWallet.wallet_seed) {
       return res.status(400).json({
-        error: 'You do not have an XRPL wallet. Generate one first.'
+        error: 'You do not have a funded XRPL wallet. Generate one first.',
+        code: 'NO_WALLET'
       });
     }
 
     if (!booking.owner_wallet) {
       return res.status(400).json({
-        error: 'Spot owner does not have an XRPL wallet. Cannot process payment.'
+        error: 'Spot owner does not have an XRPL wallet. Cannot process payment.',
+        code: 'NO_SELLER_WALLET'
       });
     }
 
@@ -76,7 +76,6 @@ const processPayment = async (req, res) => {
       });
     }
 
-    // Record transactions
     await Transaction.create({
       bookingId,
       txHash: paymentResult.driverToAdminTx.txHash,
@@ -112,6 +111,7 @@ const processPayment = async (req, res) => {
       message: 'Payment successful! Booking confirmed.',
       booking: {
         id: bookingId,
+        spotTitle: booking.spot_title,
         bookingStatus: 'confirmed',
         paymentStatus: 'split_completed'
       },
@@ -133,7 +133,6 @@ const processPayment = async (req, res) => {
         }
       }
     });
-
   } catch (error) {
     console.error('❌ Payment processing error:', error.message);
     if (req.body.bookingId) {
@@ -146,20 +145,22 @@ const processPayment = async (req, res) => {
 };
 
 // POST /api/payments/generate-wallet
+// ★ FIXED: Now checks for wallet_seed, not just wallet_address ★
 const generateWallet = async (req, res) => {
   try {
-    if (req.user.wallet_address) {
+    // Check if user already has a FUNDED wallet (with seed for signing)
+    const existing = await User.getWalletDetails(req.user.id);
+    if (existing && existing.wallet_address && existing.wallet_seed) {
       return res.status(400).json({
-        error: 'You already have a wallet.',
-        walletAddress: req.user.wallet_address
+        error: 'You already have a funded wallet.',
+        walletAddress: existing.wallet_address
       });
     }
 
-    console.log(`🔑 Generating wallet for ${req.user.role}: ${req.user.email}`);
+    console.log(`🔑 Generating XRPL wallet for ${req.user.role}: ${req.user.email}`);
 
     const wallet = await xrplService.generateWallet();
 
-    // Use User model instead of raw SQL
     await User.updateWallet(req.user.id, wallet.address, wallet.seed);
 
     console.log(`✅ Wallet generated: ${wallet.address}`);
@@ -168,11 +169,9 @@ const generateWallet = async (req, res) => {
       message: 'XRPL wallet generated successfully!',
       wallet: {
         address: wallet.address,
-        balance: wallet.balance,
-        seed: wallet.seed
+        balance: wallet.balance
       }
     });
-
   } catch (error) {
     console.error('Generate wallet error:', error.message);
     res.status(500).json({ error: 'Failed to generate wallet: ' + error.message });
@@ -182,17 +181,23 @@ const generateWallet = async (req, res) => {
 // GET /api/payments/balance
 const getBalance = async (req, res) => {
   try {
-    if (!req.user.wallet_address) {
-      return res.status(400).json({ error: 'No wallet linked to your account.' });
+    const walletDetails = await User.getWalletDetails(req.user.id);
+
+    // Check wallet_address (not wallet_seed — Xaman users don't have seed)
+    if (!walletDetails || !walletDetails.wallet_address) {
+      return res.status(400).json({
+        error: 'No wallet linked to your account.',
+        code: 'NO_WALLET'
+      });
     }
 
-    const balance = await xrplService.getBalance(req.user.wallet_address);
+    const balance = await xrplService.getBalance(walletDetails.wallet_address);
 
     res.json({
-      walletAddress: req.user.wallet_address,
-      balanceXrp: balance
+      walletAddress: walletDetails.wallet_address,
+      balanceXrp: balance,
+      hasSeed: !!walletDetails.wallet_seed
     });
-
   } catch (error) {
     console.error('Get balance error:', error.message);
     res.status(500).json({ error: 'Failed to get balance.' });
@@ -216,7 +221,6 @@ const getAdminBalance = async (req, res) => {
       currentBalance: balance,
       earnings
     });
-
   } catch (error) {
     console.error('Admin balance error:', error.message);
     res.status(500).json({ error: 'Failed to get admin balance.' });
@@ -239,7 +243,6 @@ const getTransactions = async (req, res) => {
     }
 
     res.json({ transactions, total: transactions.length });
-
   } catch (error) {
     console.error('Get transactions error:', error.message);
     res.status(500).json({ error: 'Failed to fetch transactions.' });

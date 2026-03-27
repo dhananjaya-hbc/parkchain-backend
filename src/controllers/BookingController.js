@@ -2,22 +2,15 @@
 // ============================================
 // BOOKING CONTROLLER
 // ============================================
-// Handles creating bookings, check-in, check-out, cancellation
+// Now uses TIME-SLOT OVERLAP checking instead of simple slot counting
 //
-// PRICE CALCULATION:
-//   At booking creation:
-//     expected_price = expected_duration × price_per_hour
-//     total_price = expected_price (initially, before overtime)
-//     admin_fee = total_price × 0.20
-//     seller_amount = total_price × 0.80
-//
-//   At checkout (if overtime):
-//     overtime_price = overtime_hours × price_per_hour
-//     total_price = expected_price + overtime_price
-//     admin_fee and seller_amount are recalculated
+// OLD: Check available_slots > 0 (blocks ALL times when full)
+// NEW: Check overlapping bookings < total_slots (only blocks SAME time)
 
 const Booking = require('../models/Booking');
 const Spot = require('../models/Spot');
+const FraudDetectionService = require('../services/FraudDetectionService');
+
 
 // ============================================
 // POST /api/bookings — Create a booking (driver only)
@@ -39,15 +32,9 @@ const createBooking = async (req, res) => {
       return res.status(404).json({ error: 'Spot not found.' });
     }
 
-    // Check spot is available and approved
+    // Check spot is approved
     if (!spot.is_approved) {
       return res.status(400).json({ error: 'This spot is not approved yet.' });
-    }
-    if (!spot.is_available) {
-      return res.status(400).json({ error: 'This spot is not available.' });
-    }
-    if (spot.available_slots <= 0) {
-      return res.status(400).json({ error: 'No available slots at this spot.' });
     }
 
     // Calculate duration
@@ -62,6 +49,26 @@ const createBooking = async (req, res) => {
       return res.status(400).json({ error: 'End time must be after start time.' });
     }
 
+    // ★ NEW: Check time-slot availability ★
+    // Count how many bookings overlap with the requested time
+    const overlappingCount = await Booking.countOverlapping(spotId, startTime, endTime);
+    const totalSlots = spot.total_slots || 1;
+
+    if (overlappingCount >= totalSlots) {
+      return res.status(400).json({
+        error: `No slots available for this time period. All ${totalSlots} slot(s) are booked.`,
+        code: 'TIME_SLOT_FULL',
+        details: {
+          requestedStart: startTime,
+          requestedEnd: endTime,
+          totalSlots: totalSlots,
+          bookedSlots: overlappingCount
+        }
+      });
+    }
+
+    console.log(`📊 Slot check: ${overlappingCount}/${totalSlots} booked for requested time`);
+
     // Calculate expected duration in hours
     const durationMs = end - start;
     const expectedDurationHours = parseFloat(
@@ -73,7 +80,6 @@ const createBooking = async (req, res) => {
     const expectedPriceXrp = parseFloat(
       (expectedDurationHours * pricePerHour).toFixed(6)
     );
-    // Initially, total = expected (overtime added later at checkout)
     const totalPriceXrp = expectedPriceXrp;
     const adminFeeXrp = parseFloat((totalPriceXrp * 0.20).toFixed(6));
     const sellerAmountXrp = parseFloat((totalPriceXrp * 0.80).toFixed(6));
@@ -94,10 +100,10 @@ const createBooking = async (req, res) => {
       vehicleNumber
     });
 
-    // Decrease available slots
-    await Spot.decrementSlot(spot.id);
+    // ★ REMOVED: No more Spot.decrementSlot()
+    // Availability is now checked by time overlap, not slot counter
 
-    console.log(`📋 Booking created: ${req.user.name} → "${spot.title}" for ${expectedDurationHours}h`);
+    console.log(`📋 Booking created: ${req.user.name} → "${spot.title}" for ${expectedDurationHours}h (${overlappingCount + 1}/${totalSlots} slots used)`);
 
     res.status(201).json({
       message: 'Booking created. Proceed to payment.',
@@ -109,9 +115,13 @@ const createBooking = async (req, res) => {
         adminFeeXrp,
         sellerAmountXrp,
         totalPriceXrp
+      },
+      slotInfo: {
+        totalSlots,
+        bookedForThisTime: overlappingCount + 1,
+        remainingForThisTime: totalSlots - overlappingCount - 1
       }
     });
-
   } catch (error) {
     console.error('Create booking error:', error.message);
     res.status(500).json({ error: 'Failed to create booking.' });
@@ -123,7 +133,7 @@ const createBooking = async (req, res) => {
 // ============================================
 const getBookings = async (req, res) => {
   try {
-    const { status } = req.query;  // Optional filter: ?status=active
+    const { status } = req.query;
     let bookings;
 
     switch (req.user.role) {
@@ -141,7 +151,6 @@ const getBookings = async (req, res) => {
     }
 
     res.json({ bookings, total: bookings.length });
-
   } catch (error) {
     console.error('Get bookings error:', error.message);
     res.status(500).json({ error: 'Failed to fetch bookings.' });
@@ -159,7 +168,6 @@ const getBookingById = async (req, res) => {
       return res.status(404).json({ error: 'Booking not found.' });
     }
 
-    // Security: only allow access to own bookings (unless admin)
     if (req.user.role !== 'admin' &&
         booking.driver_id !== req.user.id &&
         booking.owner_id !== req.user.id) {
@@ -167,7 +175,6 @@ const getBookingById = async (req, res) => {
     }
 
     res.json({ booking });
-
   } catch (error) {
     console.error('Get booking error:', error.message);
     res.status(500).json({ error: 'Failed to fetch booking.' });
@@ -179,7 +186,6 @@ const getBookingById = async (req, res) => {
 // ============================================
 const checkIn = async (req, res) => {
   try {
-    // Verify driver owns this booking
     const existing = await Booking.findById(req.params.id);
     if (!existing) {
       return res.status(404).json({ error: 'Booking not found.' });
@@ -205,7 +211,6 @@ const checkIn = async (req, res) => {
       message: 'Checked in successfully. Parking timer started!',
       booking
     });
-
   } catch (error) {
     console.error('Check-in error:', error.message);
     res.status(500).json({ error: 'Failed to check in.' });
@@ -217,7 +222,6 @@ const checkIn = async (req, res) => {
 // ============================================
 const checkOut = async (req, res) => {
   try {
-    // Verify driver owns this booking
     const existing = await Booking.findById(req.params.id);
     if (!existing) {
       return res.status(404).json({ error: 'Booking not found.' });
@@ -237,10 +241,9 @@ const checkOut = async (req, res) => {
       return res.status(400).json({ error: 'Check-out failed.' });
     }
 
-    // Free up the spot
-    await Spot.incrementSlot(existing.spot_id);
+    // ★ REMOVED: No more Spot.incrementSlot()
+    // Time-based overlap handles this automatically
 
-    // Build response with overtime details
     const hasOvertime = parseFloat(booking.overtime_hours) > 0;
 
     console.log(`🏁 Driver checked out: ${req.user.name} | Overtime: ${hasOvertime ? booking.overtime_hours + 'h' : 'None'}`);
@@ -261,7 +264,6 @@ const checkOut = async (req, res) => {
         sellerAmount: parseFloat(booking.seller_amount_xrp)
       }
     });
-
   } catch (error) {
     console.error('Check-out error:', error.message);
     res.status(500).json({ error: 'Failed to check out.' });
@@ -286,16 +288,48 @@ const cancelBooking = async (req, res) => {
       });
     }
 
-    // Free up the spot
-    await Spot.incrementSlot(existing.spot_id);
+    // ★ REMOVED: No more Spot.incrementSlot()
+    // Cancelled bookings are excluded from overlap count automatically
 
     console.log(`🚫 Booking cancelled by ${req.user.name}`);
 
     res.json({ message: 'Booking cancelled.', booking });
-
   } catch (error) {
     console.error('Cancel booking error:', error.message);
     res.status(500).json({ error: 'Failed to cancel booking.' });
+  }
+};
+
+// ============================================
+// POST /api/bookings/:id/fraud-check — AI Fraud Detection
+// ============================================
+const fraudCheck = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found.' });
+    }
+
+    if (booking.driver_id !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+
+    const result = await FraudDetectionService.analyzeBooking(
+      booking.driver_id,
+      booking.spot_id,
+      booking.start_time,
+      booking.end_time,
+      booking.total_price_xrp
+    );
+
+    res.json({
+      bookingId: req.params.id,
+      ...result
+    });
+  } catch (error) {
+    console.error('Fraud check error:', error.message);
+    res.status(500).json({ error: 'Fraud check failed.' });
   }
 };
 
@@ -305,5 +339,7 @@ module.exports = {
   getBookingById,
   checkIn,
   checkOut,
-  cancelBooking
+  cancelBooking,
+  fraudCheck,
+        
 };
