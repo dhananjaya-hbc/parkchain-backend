@@ -65,3 +65,66 @@ exports.getVerifications = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch verifications data.' });
   }
 };
+
+// GET /api/admin/verifications/:id
+exports.getVerificationById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await query(`
+      SELECT 
+        k.id,
+        k.full_name,
+        k.nic_number,
+        k.parking_type,
+        k.full_address,
+        k.nic_front_url,
+        k.nic_back_url,
+        k.selfie_url,
+        k.legal_document_url,
+        k.utility_bill_url,
+        k.created_at,
+        u.email as seller_email,
+        u.kyc_status
+      FROM seller_kyc k
+      JOIN users u ON k.user_id = u.id
+      WHERE k.id = $1
+    `, [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Validation handles it. KYC record not found.' });
+    }
+
+    const row = result.rows[0];
+
+    // Map database states to frontend expectations
+    const mapStatus = (dbStatus) => {
+      if (dbStatus === 'pending_review') return 'pending';
+      if (dbStatus === 'verified') return 'verified';
+      if (dbStatus === 'rejected') return 'rejected';
+      return 'pending'; 
+    };
+
+    const formattedData = {
+      id: row.id,
+      fullName: row.full_name,
+      sellerEmail: row.seller_email,
+      nicNumber: row.nic_number,
+      parkingType: row.parking_type,
+      fullAddress: row.full_address,
+      status: mapStatus(row.kyc_status),
+      createdAt: row.created_at.toISOString(),
+      nicFrontUrl: row.nic_front_url,
+      nicBackUrl: row.nic_back_url,
+      selfieUrl: row.selfie_url,
+      legalDocumentUrl: row.legal_document_url,
+      utilityBillUrl: row.utility_bill_url
+    };
+
+    res.status(200).json(formattedData);
+
+  } catch (error) {
+    console.error('Error fetching verification by ID:', error);
+    res.status(500).json({ error: 'Failed to fetch verification data.' });
+  }
+};

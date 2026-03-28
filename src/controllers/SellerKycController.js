@@ -205,3 +205,32 @@ exports.updateKycStatus = async (req, res) => {
     res.status(500).json({ error: 'Failed to update KYC status.' });
   }
 };
+
+/**
+ * 5. Get KYC Status by Email
+ * GET /api/seller/kyc/status?email=test@test.com
+ */
+exports.getKycStatusByEmail = async (req, res) => {
+  try {
+    const { email } = req.query;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    const result = await query(
+      `SELECT kyc_status FROM users WHERE email = $1`,
+      [email]
+    );
+
+    if (result.rows.length === 0) {
+      // User not found at all, return unverified
+      return res.status(200).json({ status: 'unverified' });
+    }
+
+    res.status(200).json({ status: result.rows[0].kyc_status || 'unverified' });
+  } catch (error) {
+    console.error('Error fetching KYC status by email:', error);
+    res.status(500).json({ error: 'Failed to fetch KYC status' });
+  }
+};
