@@ -9,6 +9,10 @@
 -- PAYMENT FLOW:
 --   Driver pays full amount → Admin XRPL wallet
 --   Admin keeps 20% → sends 80% to Seller wallet
+--
+-- PRICING SYSTEM:
+--   Each spot supports multiple vehicle types with different prices
+--   Example: Car: 10 XRP/h, Bike: 5 XRP/h, Truck: 15 XRP/h
 -- ============================================
 
 
@@ -82,7 +86,13 @@ CREATE TABLE IF NOT EXISTS users (
 --   false → waiting for admin approval (drivers can't see it yet)
 --
 -- A spot is ONLY shown to drivers when:
---   is_available = true AND is_approved = true AND available_slots > 0
+--   is_available = true AND is_approved = true
+--
+-- ⭐ VEHICLE PRICING:
+--   vehicle_types: Array of supported vehicle types (e.g., ['Car', 'Bike', 'Truck', 'SUV'])
+--   prices_per_hour: Corresponding prices (e.g., [10.0, 5.0, 15.0, 12.0])
+--   Arrays MUST have the same length (enforced in backend)
+--   price_per_hour: Kept for backward compatibility (defaults to Car price)
 
 CREATE TABLE IF NOT EXISTS spots (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -102,15 +112,17 @@ CREATE TABLE IF NOT EXISTS spots (
     latitude DECIMAL(10, 8) NOT NULL,
     longitude DECIMAL(11, 8) NOT NULL,
 
-    -- Pricing
-    price_per_hour DECIMAL(10, 2) NOT NULL,  -- e.g., 5.00 XRP per hour
+    -- ⭐ NEW: Vehicle-based pricing
+    -- Example: vehicle_types = ['Car', 'Bike', 'Truck']
+    --          prices_per_hour = [10.0, 5.0, 15.0]
+    vehicle_types TEXT[] DEFAULT ARRAY['Car'],
+    prices_per_hour DECIMAL(10, 2)[] DEFAULT ARRAY[10.0],
 
     -- Images
     image_urls TEXT[],   -- PostgreSQL array: ['url1', 'url2', 'url3']
 
     -- Availability
     -- is_available: seller can toggle this ON/OFF
-    -- When all slots are booked, we auto-set this to false
     is_available BOOLEAN DEFAULT true,
 
     -- Admin must approve spot before it appears to drivers
@@ -118,8 +130,7 @@ CREATE TABLE IF NOT EXISTS spots (
 
     -- Slot management
     -- Example: a parking lot might have 20 total slots
-    -- When someone books, available_slots decreases by 1
-    -- When booking ends, available_slots increases by 1
+    -- Uses time-based overlap checking (not simple counter)
     total_slots INTEGER DEFAULT 1,
     available_slots INTEGER DEFAULT 1,
 
@@ -137,13 +148,17 @@ CREATE TABLE IF NOT EXISTS spots (
 --   When driver books:
 --     → start_time & end_time are set (planned times)
 --     → expected_duration_hours is calculated
---     → expected_price_xrp is calculated
+--     → expected_price_xrp is calculated (using vehicle-specific price)
 --
 --   When driver checks out:
 --     → actual_end_time is recorded
 --     → actual_duration_hours is calculated
 --     → If actual > expected, overtime is charged
 --     → total_price_xrp = final amount to pay
+--
+-- ⭐ VEHICLE TYPE:
+--   Driver selects vehicle type during booking
+--   Price is calculated using the corresponding price from spot's prices_per_hour array
 
 CREATE TABLE IF NOT EXISTS bookings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -172,6 +187,9 @@ CREATE TABLE IF NOT EXISTS bookings (
     actual_duration_hours DECIMAL(5, 2),
 
     -- ====== PRICING ======
+    -- ⭐ NEW: Vehicle-specific pricing
+    vehicle_type VARCHAR(50) DEFAULT 'Car',
+    -- Price per hour for the selected vehicle type
     price_per_hour DECIMAL(10, 2) NOT NULL,
 
     -- Price for the expected/booked duration
@@ -295,8 +313,27 @@ CREATE INDEX IF NOT EXISTS idx_bookings_driver ON bookings(driver_id);
 CREATE INDEX IF NOT EXISTS idx_bookings_spot ON bookings(spot_id);
 CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings(booking_status);
 CREATE INDEX IF NOT EXISTS idx_bookings_payment ON bookings(payment_status);
+CREATE INDEX IF NOT EXISTS idx_bookings_vehicle_type ON bookings(vehicle_type);  -- ⭐ NEW
 CREATE INDEX IF NOT EXISTS idx_transactions_booking ON transactions(booking_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_hash ON transactions(tx_hash);
+
+
+-- ============================================
+-- MIGRATION FOR EXISTING DATA
+-- ============================================
+-- Run these if you already have data in your database
+
+-- Update existing spots to use array format
+UPDATE spots 
+SET 
+  vehicle_types = ARRAY['Car'],
+  prices_per_hour = ARRAY[price_per_hour]
+WHERE vehicle_types IS NULL OR array_length(vehicle_types, 1) IS NULL;
+
+-- Update existing bookings
+UPDATE bookings 
+SET vehicle_type = 'Car' 
+WHERE vehicle_type IS NULL;
 
 
 -- ============================================

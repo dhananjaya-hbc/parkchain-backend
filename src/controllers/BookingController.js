@@ -17,12 +17,12 @@ const FraudDetectionService = require('../services/FraudDetectionService');
 // ============================================
 const createBooking = async (req, res) => {
   try {
-    const { spotId, startTime, endTime, vehicleNumber } = req.body;
+    const { spotId, startTime, endTime, vehicleType, vehicleNumber } = req.body;  // ⭐ vehicleType required
 
     // Validate required fields
-    if (!spotId || !startTime || !endTime) {
+    if (!spotId || !startTime || !endTime || !vehicleType) {  // ⭐ vehicleType is required
       return res.status(400).json({
-        error: 'Required fields: spotId, startTime, endTime'
+        error: 'Required fields: spotId, startTime, endTime, vehicleType'
       });
     }
 
@@ -32,16 +32,32 @@ const createBooking = async (req, res) => {
       return res.status(404).json({ error: 'Spot not found.' });
     }
 
-    // Check spot is approved
     if (!spot.is_approved) {
       return res.status(400).json({ error: 'This spot is not approved yet.' });
     }
+
+    // ⭐ NEW: Validate vehicle type and get price
+    const vehicleTypes = spot.vehicle_types || ['Car'];
+    const pricesPerHour = spot.prices_per_hour || [10.0];
+    
+    const vehicleIndex = vehicleTypes.indexOf(vehicleType);
+    
+    if (vehicleIndex === -1) {
+      return res.status(400).json({
+        error: `Vehicle type "${vehicleType}" is not supported for this spot`,
+        availableTypes: vehicleTypes,
+        code: 'INVALID_VEHICLE_TYPE'
+      });
+    }
+    
+    const pricePerHour = parseFloat(pricesPerHour[vehicleIndex]);
+
+    console.log(`🚗 Vehicle type: ${vehicleType}, Price: ${pricePerHour} XRP/h`);
 
     // Calculate duration
     const start = new Date(startTime);
     const end = new Date(endTime);
 
-    // Validate dates
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       return res.status(400).json({ error: 'Invalid date format. Use ISO format.' });
     }
@@ -49,8 +65,7 @@ const createBooking = async (req, res) => {
       return res.status(400).json({ error: 'End time must be after start time.' });
     }
 
-    // ★ NEW: Check time-slot availability ★
-    // Count how many bookings overlap with the requested time
+    // Check time-slot availability
     const overlappingCount = await Booking.countOverlapping(spotId, startTime, endTime);
     const totalSlots = spot.total_slots || 1;
 
@@ -75,8 +90,7 @@ const createBooking = async (req, res) => {
       (durationMs / (1000 * 60 * 60)).toFixed(2)
     );
 
-    // Calculate prices
-    const pricePerHour = parseFloat(spot.price_per_hour);
+    // ⭐ Calculate prices using vehicle-specific rate
     const expectedPriceXrp = parseFloat(
       (expectedDurationHours * pricePerHour).toFixed(6)
     );
@@ -92,7 +106,8 @@ const createBooking = async (req, res) => {
       startTime,
       endTime,
       expectedDurationHours,
-      pricePerHour,
+      vehicleType,        // ⭐ NEW
+      pricePerHour,       // ⭐ Vehicle-specific price
       expectedPriceXrp,
       totalPriceXrp,
       adminFeeXrp,
@@ -100,15 +115,16 @@ const createBooking = async (req, res) => {
       vehicleNumber
     });
 
-    // ★ REMOVED: No more Spot.decrementSlot()
-    // Availability is now checked by time overlap, not slot counter
-
-    console.log(`📋 Booking created: ${req.user.name} → "${spot.title}" for ${expectedDurationHours}h (${overlappingCount + 1}/${totalSlots} slots used)`);
+    console.log(`📋 Booking created: ${req.user.name} → "${spot.title}"`);
+    console.log(`   Vehicle: ${vehicleType} @ ${pricePerHour} XRP/h`);
+    console.log(`   Duration: ${expectedDurationHours}h = ${expectedPriceXrp} XRP`);
+    console.log(`   Slots used: ${overlappingCount + 1}/${totalSlots}`);
 
     res.status(201).json({
       message: 'Booking created. Proceed to payment.',
       booking,
       priceBreakdown: {
+        vehicleType,              // ⭐ NEW
         pricePerHour,
         expectedDurationHours,
         expectedPriceXrp,

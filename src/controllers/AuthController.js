@@ -2,6 +2,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const xrplService = require('../services/XrplService');  // ⭐ ADD THIS
 require('dotenv').config();
 
 const generateToken = (userId, role) => {
@@ -28,6 +29,7 @@ const web3AuthLogin = async (req, res) => {
     let user = await User.findByWeb3AuthOrEmail(web3auth_sub, email);
 
     if (user) {
+      // Existing user - update info
       user = await User.updateWeb3AuthInfo(user.id, {
         name,
         walletAddress: wallet_address,
@@ -35,7 +37,22 @@ const web3AuthLogin = async (req, res) => {
         web3authSub: web3auth_sub
       });
       console.log(`🔑 Existing ${user.role} logged in: ${user.email}`);
+
+      // ⭐ Check if existing user needs XRPL wallet
+      const walletDetails = await User.getWalletDetails(user.id);
+      if (!walletDetails || !walletDetails.wallet_address || 
+          !walletDetails.wallet_seed || !walletDetails.wallet_address.startsWith('r')) {
+        console.log(`🔑 Existing user missing XRPL wallet, generating...`);
+        try {
+          const wallet = await xrplService.generateWallet();
+          await User.updateWallet(user.id, wallet.address, wallet.seed);
+          console.log(`✅ XRPL wallet generated for existing user: ${wallet.address}`);
+        } catch (walletError) {
+          console.error(`⚠️ Wallet generation failed for existing user: ${walletError.message}`);
+        }
+      }
     } else {
+      // New user - create account
       user = await User.createWeb3AuthUser({
         email,
         name,
@@ -45,14 +62,26 @@ const web3AuthLogin = async (req, res) => {
         profileImage: profile_image
       });
       console.log(`🆕 New ${user.role} registered: ${user.email}`);
+
+      // ⭐ Auto-generate XRPL wallet for new user
+      console.log(`🔑 Generating XRPL wallet for new ${userRole}...`);
+      try {
+        const wallet = await xrplService.generateWallet();
+        await User.updateWallet(user.id, wallet.address, wallet.seed);
+        user.wallet_address = wallet.address;
+        console.log(`✅ XRPL wallet generated: ${wallet.address}`);
+        console.log(`💰 Funded with test XRP`);
+      } catch (walletError) {
+        console.error(`⚠️ Auto wallet generation failed: ${walletError.message}`);
+        // Don't block registration - user can generate later
+      }
     }
 
-    // ★ GENERATE JWT TOKEN — This is the key fix! ★
     const token = generateToken(user.id, user.role);
 
     res.status(200).json({
       message: 'Authentication successful',
-      token,    // ← NEW: JWT token for all future API calls
+      token,
       user
     });
   } catch (error) {
@@ -66,7 +95,7 @@ const web3AuthLogin = async (req, res) => {
   }
 };
 
-// POST /api/auth/admin/login — Admin login
+// Keep other functions unchanged
 const adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -115,7 +144,6 @@ const adminLogin = async (req, res) => {
   }
 };
 
-// GET /api/auth/me — Get current user
 const getMe = async (req, res) => {
   try {
     res.json({
