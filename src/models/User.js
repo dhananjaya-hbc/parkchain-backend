@@ -64,7 +64,7 @@ class User {
   // ============================================
 
   // Create driver or seller (via Web3Auth — NO password)
-    static async createWeb3AuthUser({ email, name, role, walletAddress, web3authSub, profileImage }) {
+  static async createWeb3AuthUser({ email, name, role, walletAddress, web3authSub, profileImage }) {
     const result = await query(
       `INSERT INTO users (email, name, role, wallet_address, web3auth_sub, profile_image)
        VALUES ($1, $2, $3, $4, $5, $6)
@@ -89,30 +89,30 @@ class User {
   // UPDATE methods
   // ============================================
 
-  // Update user info from Web3Auth (on repeat login)
   static async updateWeb3AuthInfo(id, { name, walletAddress, profileImage, web3authSub }) {
-    // ★ UPDATED: Safely updates wallet_address from Flutter.
-    // NULLIF($4, '') prevents overwriting a valid wallet with an empty string
     const result = await query(
       `UPDATE users
-       SET name = $1,
-           profile_image = COALESCE($2, profile_image),
-           web3auth_sub = $3,
-           wallet_address = COALESCE(NULLIF($4, ''), wallet_address),
-           updated_at = NOW()
-       WHERE id = $5
-       RETURNING id, email, name, phone, role, wallet_address, web3auth_sub, profile_image, is_verified, created_at`,[name, profileImage, web3authSub, walletAddress, id]
+     SET name = $1,
+         profile_image = COALESCE($2, profile_image),
+         web3auth_sub = $3,
+         wallet_address = CASE
+           WHEN wallet_address IS NOT NULL AND wallet_address LIKE 'r%' THEN wallet_address
+           ELSE COALESCE(NULLIF($4, ''), wallet_address)
+         END,
+         updated_at = NOW()
+     WHERE id = $5
+     RETURNING id, email, name, phone, role, wallet_address, web3auth_sub, profile_image, is_verified, created_at`,
+      [name, profileImage, web3authSub, walletAddress, id]
     );
     return result.rows[0] || null;
   }
-
   // Update wallet info (when generating XRPL wallet)
   static async updateWallet(id, walletAddress, walletSeed) {
     const result = await query(
       `UPDATE users
        SET wallet_address = $1, wallet_seed = $2, updated_at = NOW()
        WHERE id = $3
-       RETURNING id, email, name, role, wallet_address`,[walletAddress, walletSeed, id]
+       RETURNING id, email, name, role, wallet_address`, [walletAddress, walletSeed, id]
     );
     return result.rows[0] || null;
   }
@@ -124,7 +124,7 @@ class User {
   // Get wallet details (including seed — for backend payment use only)
   static async getWalletDetails(id) {
     const result = await query(
-      'SELECT wallet_address, wallet_seed FROM users WHERE id = $1',[id]
+      'SELECT wallet_address, wallet_seed FROM users WHERE id = $1', [id]
     );
     return result.rows[0] || null;
   }
@@ -137,7 +137,7 @@ class User {
   static async findAll(role = null) {
     let sql = `SELECT id, email, name, phone, role, wallet_address,
                       is_verified, created_at FROM users`;
-    const params =[];
+    const params = [];
 
     if (role) {
       sql += ' WHERE role = $1';
