@@ -83,6 +83,49 @@ class Transaction {
     );
     return result.rows[0];
   }
+  // src/models/Transaction.js
+
+// Add this new method after getAdminEarnings()
+
+  // Get transactions for a specific seller (only their spots)
+static async findBySellerId(sellerId, limit = 50, offset = 0) {
+  const result = await query(
+    `SELECT t.*, 
+            b.spot_id,
+            b.driver_id,
+            s.title AS spot_title,
+            s.owner_id,
+            d.name AS driver_name
+     FROM transactions t
+     JOIN bookings b ON t.booking_id = b.id
+     JOIN spots s ON b.spot_id = s.id
+     JOIN users d ON b.driver_id = d.id
+     WHERE s.owner_id = $1 
+       AND t.tx_type = 'admin_to_seller'
+       AND t.status = 'validated'
+     ORDER BY t.created_at DESC
+     LIMIT $2 OFFSET $3`,
+    [sellerId, limit, offset]
+  );
+  return result.rows;
+}
+
+// Get seller earnings summary
+static async getSellerEarnings(sellerId) {
+  const result = await query(
+    `SELECT
+       COUNT(*) AS total_transactions,
+       COALESCE(SUM(amount_xrp), 0) AS total_earned_xrp
+     FROM transactions t
+     JOIN bookings b ON t.booking_id = b.id
+     JOIN spots s ON b.spot_id = s.id
+     WHERE s.owner_id = $1
+       AND t.tx_type = 'admin_to_seller'
+       AND t.status = 'validated'`,
+    [sellerId]
+  );
+  return result.rows[0];
+}
 }
 
 module.exports = Transaction;

@@ -16,29 +16,37 @@ class Booking {
   // CREATE a new booking
   // ============================================
   // Called when driver selects a spot and time
+// ============================================
+  // CREATE a new booking
+  // ============================================
   static async create({
     driverId, spotId, ownerId,
     startTime, endTime, expectedDurationHours,
-    pricePerHour, expectedPriceXrp, totalPriceXrp,
+    vehicleType,       // ⭐ NEW: Which vehicle type
+    pricePerHour,      // ⭐ Vehicle-specific price
+    expectedPriceXrp, totalPriceXrp,
     adminFeeXrp, sellerAmountXrp, vehicleNumber
   }) {
     const result = await query(
       `INSERT INTO bookings
          (driver_id, spot_id, owner_id,
           start_time, end_time, expected_duration_hours,
-          price_per_hour, expected_price_xrp, total_price_xrp,
+          vehicle_type, price_per_hour, expected_price_xrp, total_price_xrp,
           admin_fee_xrp, seller_amount_xrp, vehicle_number)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        RETURNING *`,
       [
         driverId, spotId, ownerId,
         startTime, endTime, expectedDurationHours,
-        pricePerHour, expectedPriceXrp, totalPriceXrp,
+        vehicleType,      // ⭐ NEW
+        pricePerHour,
+        expectedPriceXrp, totalPriceXrp,
         adminFeeXrp, sellerAmountXrp, vehicleNumber
       ]
     );
     return result.rows[0];
   }
+
 
   // ============================================
   // FIND booking by ID (with full details)
