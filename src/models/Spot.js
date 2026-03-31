@@ -1,59 +1,38 @@
 // src/models/Spot.js
-// ============================================
-// SPOT MODEL
-// ============================================
-// Handles all database operations for parking spots
-//
-// Why use a Model?
-// ────────────────
-// Instead of writing SQL queries directly in controllers,
-// we put them in a Model. This way:
-//   - SQL is in one place (easy to find and fix)
-//   - Controllers stay clean (just call model methods)
-//   - We can reuse queries across different controllers
-//
-// Pattern: Static methods on a class
-//   Spot.create({...})     → INSERT
-//   Spot.findById(id)      → SELECT by ID
-//   Spot.findAvailable()   → SELECT available spots
-
 const { query } = require('../config/db');
 
 class Spot {
   // ============================================
   // CREATE a new spot
   // ============================================
-  // Called when seller submits a new parking spot
-  // Note: is_approved defaults to false (admin must approve)
   static async create({
     ownerId, title, description, address,
-    latitude, longitude, pricePerHour,
+    latitude, longitude, 
+    vehicleTypes,      // ⭐ Array: ['Car', 'Bike', 'Truck']
+    pricesPerHour,     // ⭐ Array: [10.0, 5.0, 15.0]
     imageUrls, totalSlots
   }) {
     const result = await query(
       `INSERT INTO spots
          (owner_id, title, description, address, latitude, longitude,
-          price_per_hour, image_urls, total_slots, available_slots)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9)
+          vehicle_types, prices_per_hour, image_urls, total_slots, available_slots)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10)
        RETURNING *`,
       [
         ownerId, title, description, address,
-        latitude, longitude, pricePerHour,
-        imageUrls || [], totalSlots || 1
+        latitude, longitude,
+        vehicleTypes || ['Car'],
+        pricesPerHour || [10.0],
+        imageUrls || [], 
+        totalSlots || 1
       ]
     );
-    // $9, $9 means total_slots and available_slots start with the same value
     return result.rows[0];
   }
 
   // ============================================
   // FIND spot by ID (with owner details)
   // ============================================
-  // JOIN: combines data from spots and users tables
-  // Without JOIN: you'd need 2 separate queries
-  //   Query 1: SELECT * FROM spots WHERE id = ...
-  //   Query 2: SELECT * FROM users WHERE id = spot.owner_id
-  // With JOIN: one query gets both!
   static async findById(id) {
     const result = await query(
       `SELECT s.*, 
@@ -69,12 +48,8 @@ class Spot {
   }
 
   // ============================================
-  // FIND all available spots (for drivers to browse)
+  // FIND all available spots (for drivers)
   // ============================================
-  // Only shows spots that are:
-  //   - Available (seller hasn't deactivated)
-  //   - Approved (admin has verified)
-  //   - Have free slots
   static async findAvailable() {
     const result = await query(
       `SELECT s.*, u.name AS owner_name
@@ -90,7 +65,6 @@ class Spot {
   // ============================================
   // FIND spots by owner (seller's own spots)
   // ============================================
-  // Seller sees ALL their spots (including unapproved ones)
   static async findByOwner(ownerId) {
     const result = await query(
       `SELECT * FROM spots 
@@ -104,7 +78,6 @@ class Spot {
   // ============================================
   // FIND all spots (admin view)
   // ============================================
-  // Admin sees everything, including unapproved spots
   static async findAll() {
     const result = await query(
       `SELECT s.*, u.name AS owner_name, u.email AS owner_email
@@ -116,7 +89,7 @@ class Spot {
   }
 
   // ============================================
-  // FIND unapproved spots (admin - pending approval)
+  // FIND unapproved spots (admin)
   // ============================================
   static async findPendingApproval() {
     const result = await query(
@@ -169,9 +142,8 @@ class Spot {
   }
 
   // ============================================
-  // DECREMENT available slots (when someone books)
+  // DECREMENT available slots
   // ============================================
-  // Also sets is_available = false if no slots left
   static async decrementSlot(spotId) {
     const result = await query(
       `UPDATE spots
@@ -189,7 +161,7 @@ class Spot {
   }
 
   // ============================================
-  // INCREMENT available slots (when booking ends/cancelled)
+  // INCREMENT available slots
   // ============================================
   static async incrementSlot(spotId) {
     const result = await query(
@@ -201,8 +173,6 @@ class Spot {
        RETURNING *`,
       [spotId]
     );
-    // LEAST(a, b) returns the smaller value
-    // Prevents available_slots from exceeding total_slots
     return result.rows[0] || null;
   }
 
@@ -211,7 +181,8 @@ class Spot {
   // ============================================
   static async update(spotId, ownerId, updates) {
     const { title, description, address, latitude, longitude, 
-            pricePerHour, imageUrls, totalSlots } = updates;
+            vehicleTypes, pricesPerHour,  // ⭐ NEW
+            imageUrls, totalSlots } = updates;
 
     const result = await query(
       `UPDATE spots
@@ -220,18 +191,34 @@ class Spot {
            address = COALESCE($3, address),
            latitude = COALESCE($4, latitude),
            longitude = COALESCE($5, longitude),
-           price_per_hour = COALESCE($6, price_per_hour),
-           image_urls = COALESCE($7, image_urls),
-           total_slots = COALESCE($8, total_slots),
+           vehicle_types = COALESCE($6, vehicle_types),      // ⭐ NEW
+           prices_per_hour = COALESCE($7, prices_per_hour),  // ⭐ NEW
+           image_urls = COALESCE($8, image_urls),
+           total_slots = COALESCE($9, total_slots),
            updated_at = NOW()
-       WHERE id = $9 AND owner_id = $10
+       WHERE id = $10 AND owner_id = $11
        RETURNING *`,
       [title, description, address, latitude, longitude,
-       pricePerHour, imageUrls, totalSlots, spotId, ownerId]
+       vehicleTypes, pricesPerHour,  // ⭐ NEW
+       imageUrls, totalSlots, spotId, ownerId]
     );
-    // COALESCE($1, title) means: use $1 if provided, otherwise keep existing value
-    // This allows partial updates (only update fields that were sent)
     return result.rows[0] || null;
+  }
+
+  // ============================================
+  // ⭐ NEW: Get price for a specific vehicle type
+  // ============================================
+  static getPriceForVehicle(spot, vehicleType) {
+    const vehicleTypes = spot.vehicle_types || ['Car'];
+    const pricesPerHour = spot.prices_per_hour || [10.0];
+    
+    const index = vehicleTypes.indexOf(vehicleType);
+    
+    if (index === -1) {
+      return null; // Vehicle type not supported
+    }
+    
+    return parseFloat(pricesPerHour[index]);
   }
 }
 
