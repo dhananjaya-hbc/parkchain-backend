@@ -55,29 +55,16 @@ router.post('/verify', async (req, res) => {
     const walletAddress = result.walletAddress;
     console.log(`✅ Xaman sign-in verified: ${walletAddress}`);
 
-    let user = await User.findByWeb3AuthOrEmail(
-      `xaman|${walletAddress}`,
-      `${walletAddress.substring(0, 8)}@xrpl.wallet`
-    );
+    let user = await User.findByWalletAddress(walletAddress);
 
     if (user) {
-      user = await User.updateWeb3AuthInfo(user.id, {
-        name: user.name,
-        walletAddress: user.wallet_address,
-        profileImage: user.profile_image,
-        web3authSub: `xaman|${walletAddress}`
-      });
-      console.log(`🔑 Existing user logged in via Xaman: ${walletAddress}`);
+      console.log(`🔑 Existing user logged in via Xaman app: ${walletAddress}`);
     } else {
-      user = await User.createWeb3AuthUser({
-        email: `${walletAddress.substring(0, 8)}@xrpl.wallet`,
-        name: 'Xaman User',
-        role: 'driver',
+      user = await User.createXamanUser({
         walletAddress: walletAddress,
-        web3authSub: `xaman|${walletAddress}`,
-        profileImage: ''
+        role: 'driver'
       });
-      console.log(`🆕 New user registered via Xaman: ${walletAddress}`);
+      console.log(`🆕 New user registered via Xaman app: ${walletAddress}`);
     }
 
     const token = generateToken(user.id, user.role);

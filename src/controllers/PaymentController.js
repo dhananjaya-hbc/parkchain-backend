@@ -148,7 +148,14 @@ const processPayment = async (req, res) => {
 // ★ FIXED: Now checks for wallet_seed, not just wallet_address ★
 const generateWallet = async (req, res) => {
   try {
-    // Check if user already has a FUNDED wallet (with seed for signing)
+    // Prevent Xaman users from generating a wallet
+    if (req.user.auth_type === 'xaman') {
+      return res.status(403).json({
+        error: 'Xaman users manage their own keys and cannot generate a local wallet.'
+      });
+    }
+
+    // Check if user already has a FUNDED wallet (with seed for signing)        
     const existing = await User.getWalletDetails(req.user.id);
     if (existing && existing.wallet_address && existing.wallet_seed) {
       return res.status(400).json({
