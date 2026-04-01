@@ -63,8 +63,9 @@ CREATE TABLE IF NOT EXISTS users (
     -- Profile image from social login
     profile_image TEXT,
 
-    -- Seller verification: admin must verify before seller can list spots
-    is_verified BOOLEAN DEFAULT false,
+    -- Auth type (e.g., 'web3auth', 'xaman', 'jwt')
+    auth_type VARCHAR(20) DEFAULT 'web3auth',
+
 
     -- Timestamps
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

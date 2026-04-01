@@ -1,6 +1,10 @@
 // src/config/db.js
-const { Pool } = require('pg');
+const { Pool, neonConfig } = require('@neondatabase/serverless');
+const ws = require('ws'); // <-- 1. Import the new websocket package
 require('dotenv').config();
+
+// <-- 2. Tell Neon to use 'ws' to bypass the Windows Wi-Fi bug
+neonConfig.webSocketConstructor = ws; 
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,

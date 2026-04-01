@@ -8,6 +8,9 @@ require('dotenv').config();
 // Web3Auth register/login for drivers and sellers
 router.post('/web3auth', AuthController.web3AuthLogin);
 
+// Xaman register/login for drivers and sellers
+router.post('/xaman', AuthController.xamanLogin);
+
 // Admin login with email + password
 router.post('/admin/login', AuthController.adminLogin);
 
