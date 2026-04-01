@@ -37,7 +37,6 @@ class User {
   // CREATE methods
   // ============================================
 
-  // Create driver or seller via Xaman Wallet
   static async createXamanUser({ walletAddress, role }) {
     const mockEmail = `${walletAddress}@xaman.local`;
     const mockName = `Xaman User ${walletAddress.substring(0, 8)}`;
@@ -50,7 +49,6 @@ class User {
     return result.rows[0];
   }
 
-  // Create admin (with password)
   static async createAdmin({ email, name, hashedPassword }) {
     const result = await query(
       `INSERT INTO users (email, name, password, role, auth_type)
@@ -65,7 +63,6 @@ class User {
   // UPDATE methods
   // ============================================
 
-  // Update user profile info
   static async updateProfile(id, { name, phone, profileImage }) {
     const result = await query(
       `UPDATE users
@@ -80,28 +77,17 @@ class User {
     return result.rows[0] || null;
   }
 
-  // Update wallet info (only used internally if needed)
-  static async updateWallet(id, walletAddress, walletSeed) {
-    const result = await query(
-      `UPDATE users
-       SET wallet_address = $1, wallet_seed = $2, updated_at = NOW()
-       WHERE id = $3
-       RETURNING id, email, name, role, wallet_address`,
-      [walletAddress, walletSeed, id]
-    );
-    return result.rows[0] || null;
-  }
-
   // ============================================
   // WALLET methods
   // ============================================
 
-  static async getWalletDetails(id) {
+  // Only returns wallet_address (no seed — Xaman users manage their own keys)
+  static async getWalletAddress(id) {
     const result = await query(
-      'SELECT wallet_address, wallet_seed FROM users WHERE id = $1',
+      'SELECT wallet_address FROM users WHERE id = $1',
       [id]
     );
-    return result.rows[0] || null;
+    return result.rows[0]?.wallet_address || null;
   }
 
   // ============================================
