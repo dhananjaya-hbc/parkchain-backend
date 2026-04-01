@@ -1,16 +1,4 @@
 // src/controllers/PaymentController.js
-// ============================================
-// XAMAN-ONLY PAYMENT FLOW:
-//   Payments are handled via XummRoutes.js:
-//     POST /api/auth/xumm/create-payment  → driver signs in Xaman app
-//     POST /api/auth/xumm/verify-payment  → backend verifies & splits 80/20
-//
-//   This controller now only handles:
-//     - Balance checking
-//     - Transaction history
-//     - Transaction verification
-// ============================================
-
 const xrplService = require('../services/XrplService');
 const Transaction = require('../models/Transaction');
 const User = require('../models/User');
@@ -19,19 +7,19 @@ require('dotenv').config();
 // GET /api/payments/balance
 const getBalance = async (req, res) => {
   try {
-    const walletDetails = await User.getWalletDetails(req.user.id);
+    const walletAddress = await User.getWalletAddress(req.user.id);
 
-    if (!walletDetails || !walletDetails.wallet_address) {
+    if (!walletAddress) {
       return res.status(400).json({
-        error: 'No wallet linked to your account.',
+        error: 'No wallet linked to your account. Please login with Xaman.',
         code: 'NO_WALLET'
       });
     }
 
-    const balance = await xrplService.getBalance(walletDetails.wallet_address);
+    const balance = await xrplService.getBalance(walletAddress);
 
     res.json({
-      walletAddress: walletDetails.wallet_address,
+      walletAddress,
       balanceXrp: balance
     });
   } catch (error) {

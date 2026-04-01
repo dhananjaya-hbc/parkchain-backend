@@ -15,37 +15,28 @@
 -- ============================================
 -- TABLE 1: USERS
 -- ============================================
+-- In schema.sql, the users table becomes:
+
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-
     email VARCHAR(255) UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
     phone VARCHAR(20),
-
-    -- Password: ONLY used by admin (JWT auth)
-    -- NULL for drivers/sellers (they use Xaman)
     password VARCHAR(255),
-
     role VARCHAR(20) NOT NULL DEFAULT 'driver'
         CHECK (role IN ('driver', 'seller', 'admin')),
-
-    -- XRPL Wallet address (from Xaman for drivers/sellers)
+    
+    -- Only wallet ADDRESS — no seed stored!
+    -- Drivers/sellers: comes from Xaman login
+    -- Admin: set in .env (not here)
     wallet_address VARCHAR(60),
-    -- wallet_seed: NULL for Xaman users (they sign in their app)
-    -- Only used internally if needed
-    wallet_seed VARCHAR(100),
-
+    
     profile_image TEXT,
-
-    -- Auth type: 'xaman' for drivers/sellers, 'jwt' for admin
     auth_type VARCHAR(20) DEFAULT 'xaman',
-
     is_verified BOOLEAN DEFAULT false,
-
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
 
 -- ============================================
 -- TABLE 2: SPOTS
