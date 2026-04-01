@@ -204,6 +204,7 @@ router.post('/verify-payment', async (req, res) => {
     const totalXrp = parseFloat(booking.total_price_xrp);
     const adminAddress = process.env.ADMIN_WALLET_ADDRESS;
 
+    // Record driver → admin transaction
     if (txHash) {
       await Transaction.create({
         bookingId,
@@ -224,12 +225,12 @@ router.post('/verify-payment', async (req, res) => {
 
     console.log(`📌 Admin → Seller: ${sellerAmount} XRP (80%)`);
 
+    // ✅ FIXED: Use paySeller instead of sendPayment
     const xrplService = require('../services/XrplService');
-    const adminToSellerTx = await xrplService.sendPayment(
-      process.env.ADMIN_WALLET_SEED,
+    const adminToSellerTx = await xrplService.paySeller(
       booking.owner_wallet,
       sellerAmount,
-      `booking:${bookingId}:seller_payout`
+      bookingId
     );
 
     if (adminToSellerTx.success) {
@@ -239,10 +240,10 @@ router.post('/verify-payment', async (req, res) => {
         fromAddress: adminAddress,
         toAddress: booking.owner_wallet,
         amountXrp: sellerAmount,
-        amountDrops: adminToSellerTx.amountDrops,
+        amountDrops: Math.floor(sellerAmount * 1000000),
         txType: 'admin_to_seller',
         status: 'validated',
-        ledgerIndex: adminToSellerTx.ledgerIndex,
+        ledgerIndex: 0,
         resultCode: adminToSellerTx.resultCode
       });
 
@@ -267,7 +268,9 @@ router.post('/verify-payment', async (req, res) => {
             driverToAdmin: {
               txHash: txHash || 'signed_in_xaman',
               amount: totalXrp,
-              verifyUrl: txHash ? `https://testnet.xrpl.org/transactions/${txHash}` : null
+              verifyUrl: txHash
+                ? `https://testnet.xrpl.org/transactions/${txHash}`
+                : null
             },
             adminToSeller: {
               txHash: adminToSellerTx.txHash,
