@@ -2,7 +2,6 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
-const xrplService = require('../services/XrplService');  // ⭐ ADD THIS
 require('dotenv').config();
 
 const generateToken = (userId, role) => {
@@ -11,97 +10,6 @@ const generateToken = (userId, role) => {
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );
-};
-
-// POST /api/auth/web3auth — Register/login driver or seller
-const web3AuthLogin = async (req, res) => {
-  try {
-    const { email, name, wallet_address, web3auth_sub, profile_image, role } = req.body;
-
-    if (!email || !name || !web3auth_sub) {
-      return res.status(400).json({
-        error: 'email, name, and web3auth_sub are required from Web3Auth.'
-      });
-    }
-
-    const userRole = role === 'seller' ? 'seller' : 'driver';
-
-    let user = await User.findByWeb3AuthOrEmail(web3auth_sub, email);
-
-    if (user) {
-      // Existing user - update info
-      user = await User.updateWeb3AuthInfo(user.id, {
-        name,
-        walletAddress: wallet_address,
-        profileImage: profile_image,
-        web3authSub: web3auth_sub
-      });
-      console.log(`🔑 Existing ${user.role} logged in: ${user.email}`);
-
-      // ⭐ Check if existing user needs XRPL wallet
-      const walletDetails = await User.getWalletDetails(user.id);
-      
-      // If the user ALREADY has a valid XRPL wallet address, we shouldn't overwrite it 
-      // just because they lack a local wallet_seed.
-      const hasValidWallet = walletDetails && walletDetails.wallet_address && walletDetails.wallet_address.startsWith('r');
-      
-      if (!hasValidWallet) {
-        console.log(`🔑 Existing user missing XRPL wallet, generating...`);
-        try {
-          const wallet = await xrplService.generateWallet();
-          await User.updateWallet(user.id, wallet.address, wallet.seed);
-          console.log(`✅ XRPL wallet generated for existing user: ${wallet.address}`);
-        } catch (walletError) {
-          console.error(`⚠️ Wallet generation failed for existing user: ${walletError.message}`);
-        }
-      }
-    } else {
-      // New user - create account
-      user = await User.createWeb3AuthUser({
-        email,
-        name,
-        role: userRole,
-        walletAddress: wallet_address,
-        web3authSub: web3auth_sub,
-        profileImage: profile_image
-      });
-      console.log(`🆕 New ${user.role} registered: ${user.email}`);
-
-      // ⭐ Auto-generate XRPL wallet ONLY if they didn't provide an existing one
-      if (wallet_address && wallet_address.startsWith('r')) {
-        console.log(`🔑 New ${userRole} brought their own wallet: ${wallet_address}`);
-        // We do nothing because their own wallet is already saved by createWeb3AuthUser
-      } else {
-        console.log(`🔑 Generating XRPL wallet for new ${userRole}...`);
-        try {
-          const wallet = await xrplService.generateWallet();
-          await User.updateWallet(user.id, wallet.address, wallet.seed);
-          user.wallet_address = wallet.address;
-          console.log(`✅ XRPL wallet generated: ${wallet.address}`);
-          console.log(`💰 Funded with test XRP`);
-        } catch (walletError) {
-          console.error(`⚠️ Auto wallet generation failed: ${walletError.message}`);
-          // Don't block registration - user can generate later
-        }
-      }
-    }
-
-    const token = generateToken(user.id, user.role);
-
-    res.status(200).json({
-      message: 'Authentication successful',
-      token,
-      user
-    });
-  } catch (error) {
-    console.error('Web3Auth login error:', error.message);
-    if (error.code === '23505') {
-      return res.status(409).json({
-        error: 'An account with this email already exists.'
-      });
-    }
-    res.status(500).json({ error: 'Registration failed. Please try again.' });
-  }
 };
 
 // POST /api/auth/xaman — Register/login via Xaman wallet
@@ -129,7 +37,6 @@ const xamanLogin = async (req, res) => {
       console.log(`🆕 New ${user.role} registered via Xaman: ${user.wallet_address}`);
     }
 
-    // ★ GENERATE JWT TOKEN
     const token = generateToken(user.id, user.role);
 
     res.status(200).json({
@@ -212,4 +119,4 @@ const getMe = async (req, res) => {
   }
 };
 
-module.exports = { web3AuthLogin, xamanLogin, adminLogin, getMe };
+module.exports = { xamanLogin, adminLogin, getMe };
