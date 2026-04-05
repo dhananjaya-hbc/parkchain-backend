@@ -1,13 +1,14 @@
 const { GOOGLE_MAPS_API_KEY } = process.env;
 
 class NavigationService {
-  static async getDirections(origin, destination) {
+  // Add mode parameter with a default fallback
+  static async getDirections(origin, destination, mode = 'driving') {
     if (!GOOGLE_MAPS_API_KEY) {
       throw new Error('GOOGLE_MAPS_API_KEY is not defined in environment variables');
     }
 
-    // Google Directions API URL
-    const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${destination}&key=${GOOGLE_MAPS_API_KEY}`;
+    // Append the mode dynamically to the Google Directions API URL
+    const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${destination}&mode=${mode}&key=${GOOGLE_MAPS_API_KEY}`;
 
     try {
       const response = await fetch(url);

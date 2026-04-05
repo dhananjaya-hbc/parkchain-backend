@@ -10,6 +10,7 @@
 const Booking = require('../models/Booking');
 const Spot = require('../models/Spot');
 const FraudDetectionService = require('../services/FraudDetectionService');
+const { calculateDistance } = require('../utils/geoUtils');
 
 
 // ============================================
@@ -202,10 +203,21 @@ const getBookingById = async (req, res) => {
 // ============================================
 const checkIn = async (req, res) => {
   try {
+    const { driverLocation } = req.body;
+    const CHECK_IN_RADIUS_TOLERANCE_METERS = 15; // 10m limit + 5m GPS drift tolerance
+
+    // 1. Verify frontend provided location
+    if (!driverLocation || !driverLocation.lat || !driverLocation.lng) {
+      return res.status(400).json({ error: 'Driver location (lat, lng) is required for check-in.' });
+    }
+
+    // 2. Fetch the existing booking using your Model
     const existing = await Booking.findById(req.params.id);
     if (!existing) {
       return res.status(404).json({ error: 'Booking not found.' });
     }
+    
+    // 3. Authorization and State checks
     if (existing.driver_id !== req.user.id) {
       return res.status(403).json({ error: 'This is not your booking.' });
     }
@@ -215,16 +227,33 @@ const checkIn = async (req, res) => {
       });
     }
 
+    // 4. Server-Side Distance Verification
+    const distance = calculateDistance(
+        parseFloat(driverLocation.lat),
+        parseFloat(driverLocation.lng),
+        parseFloat(existing.spot_latitude),
+        parseFloat(existing.spot_longitude)
+    );
+
+    if (distance > CHECK_IN_RADIUS_TOLERANCE_METERS) {
+        return res.status(400).json({ 
+            error: 'Too far from the spot. Please get closer to check-in.',
+            currentDistance: Math.round(distance)
+        });
+    }
+
+    // 5. Database Update (Your model already sets actual_start_time and 'active' status!)
     const booking = await Booking.checkIn(req.params.id);
 
     if (!booking) {
       return res.status(400).json({ error: 'Check-in failed.' });
     }
 
-    console.log(`🚗 Driver checked in: ${req.user.name}`);
+    console.log(`🚗 Driver checked in: ${req.user.name} | Distance: ${distance.toFixed(2)}m`);
 
     res.json({
       message: 'Checked in successfully. Parking timer started!',
+      distance: Math.round(distance),
       booking
     });
   } catch (error) {
