@@ -3,7 +3,8 @@ const NavigationService = require('../services/NavigationService');
 class NavigationController {
   static async getRoute(req, res) {
     try {
-      const { origin, destination } = req.query;
+      // Extract mode from query (even if frontend sends "Bike" or "SUV")
+      const { origin, destination, mode } = req.query;
 
       if (!origin || !destination) {
         return res.status(400).json({ 
@@ -12,7 +13,13 @@ class NavigationController {
         });
       }
 
-      const routeData = await NavigationService.getDirections(origin, destination);
+      // Since the app only supports "Bike" (Motorcycle) and "SUV/Car",
+      // both MUST use the Google Maps "driving" mode because they both use standard roads.
+      // Google's "bicycling" mode is for pedal bicycles and uses bike paths!
+      const googleMode = 'driving'; 
+
+      // Pass the forced 'driving' mode parameter to the service
+      const routeData = await NavigationService.getDirections(origin, destination, googleMode);
 
       res.status(200).json({
         success: true,
