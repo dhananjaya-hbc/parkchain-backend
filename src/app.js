@@ -59,6 +59,9 @@ app.use('/api/bookings', require('./routes/BookingRoutes'));
 app.use('/api/payments', require('./routes/PaymentRoutes'));
 app.use('/api/navigation', require('./routes/NavigationRoutes'));
 
+// KYC / Didit Webhooks Routes
+app.use('/api', require('./routes/KycRoutes'));
+
 app.get('/', (req, res) => {
   res.json({
     message: 'Parking Payment API',

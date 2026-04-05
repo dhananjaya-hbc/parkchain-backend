@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS users (
     wallet_address VARCHAR(60),
     
     profile_image TEXT,
+    kyc_session_id VARCHAR(255),
     auth_type VARCHAR(20) DEFAULT 'xaman',
     is_verified BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
