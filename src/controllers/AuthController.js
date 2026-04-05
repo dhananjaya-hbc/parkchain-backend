@@ -50,6 +50,7 @@ const xamanLogin = async (req, res) => {
         wallet_address: user.wallet_address,
         profile_image: user.profile_image,
         auth_type: user.auth_type,
+        kyc_status: user.kyc_status,
         created_at: user.created_at
       }
     });
