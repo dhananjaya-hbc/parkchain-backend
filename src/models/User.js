@@ -9,7 +9,7 @@ class User {
   static async findById(id) {
     const result = await query(
       `SELECT id, email, name, phone, role, wallet_address,
-              profile_image, is_verified, created_at, auth_type
+              profile_image, kyc_status, created_at, auth_type
        FROM users WHERE id = $1`,
       [id]
     );
@@ -43,7 +43,7 @@ class User {
     const result = await query(
       `INSERT INTO users (email, name, role, wallet_address, auth_type)
        VALUES ($1, $2, $3, $4, 'xaman')
-       RETURNING id, email, name, phone, role, wallet_address, is_verified, created_at, auth_type`,
+       RETURNING id, email, name, phone, role, wallet_address, kyc_status, created_at, auth_type`,
       [mockEmail, mockName, role, walletAddress]
     );
     return result.rows[0];
@@ -71,7 +71,7 @@ class User {
            profile_image = COALESCE($3, profile_image),
            updated_at = NOW()
        WHERE id = $4
-       RETURNING id, email, name, phone, role, wallet_address, profile_image, is_verified, created_at, auth_type`,
+       RETURNING id, email, name, phone, role, wallet_address, profile_image, kyc_status, created_at, auth_type`,
       [name, phone, profileImage, id]
     );
     return result.rows[0] || null;
@@ -96,7 +96,7 @@ class User {
 
   static async findAll(role = null) {
     let sql = `SELECT id, email, name, phone, role, wallet_address,
-                      is_verified, created_at, auth_type FROM users`;
+                      kyc_status, created_at, auth_type FROM users`;
     const params = [];
 
     if (role) {
@@ -111,10 +111,10 @@ class User {
 
   static async verifySeller(sellerId) {
     const result = await query(
-      `UPDATE users 
-       SET is_verified = true, updated_at = NOW()
+      `UPDATE users
+       SET kyc_status = 'APPROVED', updated_at = NOW()
        WHERE id = $1 AND role = 'seller'
-       RETURNING id, email, name, role, is_verified`,
+       RETURNING id, email, name, role, kyc_status`,
       [sellerId]
     );
     return result.rows[0] || null;
