@@ -61,6 +61,7 @@ app.use('/api/navigation', require('./routes/NavigationRoutes'));
 
 // KYC / Didit Webhooks Routes
 app.use('/api', require('./routes/KycRoutes'));
+app.use('/api/kyb', require('./routes/KybRoutes'));
 
 app.get('/', (req, res) => {
   res.json({
