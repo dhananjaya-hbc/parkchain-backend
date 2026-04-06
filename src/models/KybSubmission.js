@@ -62,15 +62,29 @@ class KybSubmission {
   }
 
   // ============================================
+  // GET ALL submissions for a specific owner
+  // ============================================
+  static async findByOwnerId(ownerId) {
+    const result = await query(
+      `SELECT id, entity_name, status, admin_notes 
+       FROM kyb_submissions 
+       WHERE owner_id = $1 
+       ORDER BY created_at DESC`,
+      [ownerId]
+    );
+    return result.rows;
+  }
+
+  // ============================================
   // UPDATE submission status
   // ============================================
   static async updateStatus(id, status, adminNotes) {
     const result = await query(
       `UPDATE kyb_submissions
-       SET status = $1, admin_notes = COALESCE($2, admin_notes), updated_at = NOW()
+       SET status = $1, admin_notes = $2, updated_at = NOW()
        WHERE id = $3
        RETURNING *`,
-      [status, adminNotes || null, id]
+      [status, adminNotes !== undefined ? adminNotes : null, id]
     );
     return result.rows[0] || null;
   }
