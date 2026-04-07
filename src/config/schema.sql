@@ -40,6 +40,25 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- ============================================
+-- TABLE 2.5: KYB_Submissions
+-- ============================================
+CREATE TABLE IF NOT EXISTS kyb_submissions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    
+    entity_name VARCHAR(255) NOT NULL,
+    address TEXT NOT NULL,
+    google_maps_link VARCHAR(500),
+    spot_type VARCHAR(50) CHECK (spot_type IN ('garage', 'open', 'covered', 'driveway', 'underground')),
+    document_url TEXT,
+    status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    admin_notes TEXT,
+    
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
 -- TABLE 2: SPOTS
 -- ============================================
 CREATE TABLE IF NOT EXISTS spots (
