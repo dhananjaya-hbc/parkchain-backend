@@ -3,11 +3,6 @@
 // BOOKING MODEL
 // ============================================
 // Handles all database operations for bookings
-//
-// Key concept: Expected vs Actual duration
-//   - Expected: what driver booked (set at creation)
-//   - Actual: how long driver really stayed (set at checkout)
-//   - If actual > expected → overtime charges apply
 
 const { query } = require('../config/db');
 
@@ -15,15 +10,11 @@ class Booking {
   // ============================================
   // CREATE a new booking
   // ============================================
-  // Called when driver selects a spot and time
-// ============================================
-  // CREATE a new booking
-  // ============================================
   static async create({
     driverId, spotId, ownerId,
     startTime, endTime, expectedDurationHours,
-    vehicleType,       // ⭐ NEW: Which vehicle type
-    pricePerHour,      // ⭐ Vehicle-specific price
+    vehicleType,       
+    pricePerHour,      
     expectedPriceXrp, totalPriceXrp,
     adminFeeXrp, sellerAmountXrp, vehicleNumber
   }) {
@@ -38,7 +29,7 @@ class Booking {
       [
         driverId, spotId, ownerId,
         startTime, endTime, expectedDurationHours,
-        vehicleType,      // ⭐ NEW
+        vehicleType,      
         pricePerHour,
         expectedPriceXrp, totalPriceXrp,
         adminFeeXrp, sellerAmountXrp, vehicleNumber
@@ -51,10 +42,10 @@ class Booking {
   // ============================================
   // FIND booking by ID (with full details)
   // ============================================
-  // Joins 3 tables: bookings + spots + users (driver and owner)
   static async findById(id) {
     const result = await query(
       `SELECT b.*,
+              b.actual_start_time + (b.expected_duration_hours * INTERVAL '1 hour') AS expiry_time,
               s.title AS spot_title, 
               s.address AS spot_address,
               s.latitude AS spot_latitude,
@@ -82,6 +73,7 @@ class Booking {
   static async findByDriver(driverId, status = null) {
     let sql = `
       SELECT b.*, 
+             b.actual_start_time + (b.expected_duration_hours * INTERVAL '1 hour') AS expiry_time,
              s.title AS spot_title, 
              s.address AS spot_address,
              s.latitude AS spot_latitude,
@@ -94,7 +86,6 @@ class Booking {
     
     const params = [driverId];
 
-    // Optionally filter by status
     if (status) {
       sql += ' AND b.booking_status = $2';
       params.push(status);
@@ -112,6 +103,7 @@ class Booking {
   static async findByOwner(ownerId, status = null) {
     let sql = `
       SELECT b.*, 
+             b.actual_start_time + (b.expected_duration_hours * INTERVAL '1 hour') AS expiry_time,
              s.title AS spot_title,
              d.name AS driver_name,
              d.email AS driver_email,
@@ -140,6 +132,7 @@ class Booking {
   static async findAll() {
     const result = await query(
       `SELECT b.*,
+              b.actual_start_time + (b.expected_duration_hours * INTERVAL '1 hour') AS expiry_time,
               s.title AS spot_title,
               d.name AS driver_name,
               o.name AS owner_name
@@ -197,18 +190,9 @@ class Booking {
   }
 
   // ============================================
-  // CHECK OUT - driver leaves the spot
+  // CHECK OUT THE BOOKING (Sets status to 'completed')
   // ============================================
-  // This is where overtime is calculated!
-  //
-  // Steps:
-  //   1. Set actual_end_time = NOW()
-  //   2. Calculate actual_duration_hours
-  //   3. If actual > expected → calculate overtime
-  //   4. Update total_price with overtime charges
-  //   5. Recalculate admin fee and seller amount
   static async checkOut(id) {
-    // First, get the booking to calculate overtime
     const booking = await query(
       'SELECT * FROM bookings WHERE id = $1 AND booking_status = $2',
       [id, 'active']
@@ -241,7 +225,7 @@ class Booking {
     const adminFee = parseFloat((totalPrice * 0.20).toFixed(6));
     const sellerAmount = parseFloat((totalPrice * 0.80).toFixed(6));
 
-    // Update the booking
+    // Update the booking and SET TO COMPLETED
     const result = await query(
       `UPDATE bookings
        SET actual_end_time = NOW(),
@@ -266,7 +250,6 @@ class Booking {
   // CANCEL booking
   // ============================================
   static async cancel(id, userId) {
-    // Only allow cancelling pending or confirmed bookings
     const result = await query(
       `UPDATE bookings
        SET booking_status = 'cancelled', updated_at = NOW()
@@ -279,18 +262,9 @@ class Booking {
     return result.rows[0] || null;
   }
 
-    // ============================================
-  // COUNT OVERLAPPING BOOKINGS for a time range
   // ============================================
-  // Checks how many active bookings overlap with the requested time
-  //
-  // Time overlap logic:
-  //   Existing:  |----A----|
-  //   Request 1:      |----B----|     ← OVERLAPS (B starts before A ends)
-  //   Request 2:                |--C--|  ← NO OVERLAP (C starts after A ends)
-  //   Request 3: |--D--|              ← OVERLAPS (D ends after A starts)
-  //
-  // SQL: A overlaps B when: A.start < B.end AND A.end > B.start
+  // COUNT OVERLAPPING BOOKINGS
+  // ============================================
   static async countOverlapping(spotId, startTime, endTime, excludeBookingId = null) {
     let sql = `
       SELECT COUNT(*) as count 
@@ -302,7 +276,6 @@ class Booking {
     `;
     const params = [spotId, startTime, endTime];
 
-    // Exclude a specific booking (useful for rebooking)
     if (excludeBookingId) {
       sql += ` AND id != $4`;
       params.push(excludeBookingId);

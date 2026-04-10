@@ -37,8 +37,9 @@ class Spot {
     const result = await query(
       `SELECT s.*, 
               u.name AS owner_name, 
-              u.wallet_address AS owner_wallet,
-              u.email AS owner_email
+              u.email AS owner_email,
+              u.phone AS owner_phone,
+              u.wallet_address AS owner_wallet
        FROM spots s
        JOIN users u ON s.owner_id = u.id
        WHERE s.id = $1`,
