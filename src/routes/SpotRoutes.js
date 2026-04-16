@@ -17,6 +17,7 @@ const router = require('express').Router();
 const SpotController = require('../controllers/SpotController');
 const authMiddleware = require('../middleware/AuthMiddleware');
 const roleMiddleware = require('../middleware/RoleMiddleware');
+const { spotUpload } = require('../config/cloudinary');
 
 // Public/authenticated routes
 router.get('/', authMiddleware, SpotController.getSpots);
@@ -24,7 +25,7 @@ router.get('/pending', authMiddleware, roleMiddleware('admin'), SpotController.g
 router.get('/:id', authMiddleware, SpotController.getSpotById);
 
 // Seller routes
-router.post('/', authMiddleware, roleMiddleware('seller'), SpotController.createSpot);
+router.post('/', authMiddleware, roleMiddleware('seller'), spotUpload.array('images'), SpotController.createSpot);
 router.put('/:id', authMiddleware, roleMiddleware('seller'), SpotController.updateSpot);
 router.put('/:id/toggle', authMiddleware, roleMiddleware('seller'), SpotController.toggleAvailability);
 
