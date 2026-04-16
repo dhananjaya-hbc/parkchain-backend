@@ -10,7 +10,7 @@ cloudinary.config({
 });
 
 // Setup multer storage for Cloudinary
-const storage = new CloudinaryStorage({
+const kybStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'kyb_documents',     // Cloudinary folder name
@@ -19,9 +19,20 @@ const storage = new CloudinaryStorage({
   }
 });
 
-const upload = multer({ storage: storage });
+const spotStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'spot_images',
+    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+    resource_type: 'image'
+  }
+});
+
+const upload = multer({ storage: kybStorage });
+const spotUpload = multer({ storage: spotStorage });
 
 module.exports = {
   cloudinary,
-  upload
+  upload,
+  spotUpload
 };
