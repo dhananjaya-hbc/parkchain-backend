@@ -28,6 +28,7 @@ router.get('/balance', PaymentController.getBalance);
 // Transaction queries
 router.get('/transactions', roleMiddleware('admin'), PaymentController.getTransactions);
 router.get('/seller/transactions', roleMiddleware('seller'), PaymentController.getSellerTransactions);
+router.get('/seller/earnings-chart', roleMiddleware('seller'), PaymentController.getSellerEarningsChart);
 router.get('/verify/:txHash', PaymentController.verifyTransaction);
 
 // Admin only
