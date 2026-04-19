@@ -8,9 +8,9 @@ class Spot {
   static async create({
     ownerId, title, description, address,
     latitude, longitude, 
-    vehicleTypes,      // ⭐ Array: ['Car', 'Bike', 'Truck']
-    slotsPerType,      // ⭐ Array: [2, 3, 1]
-    pricesPerHour,     // ⭐ Array: [10.0, 5.0, 15.0]
+    vehicleTypes,      
+    slotsPerType,      
+    pricesPerHour,     
     imageUrls, totalSlots, amenities
   }) {
     const result = await query(
