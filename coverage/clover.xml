@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<coverage generated="1776597793186" clover="3.2.0">
+  <project timestamp="1776597793187" name="All files">
+    <metrics statements="55" coveredstatements="20" conditionals="23" coveredconditionals="5" methods="11" coveredmethods="2" elements="89" coveredelements="27" complexity="0" loc="55" ncloc="55" packages="1" files="1" classes="1"/>
+    <file name="Booking.js" path="D:\UoM\2nd Year Software Project\park-chain-backend\src\models\Booking.js">
+      <metrics statements="55" coveredstatements="20" conditionals="23" coveredconditionals="5" methods="11" coveredmethods="2"/>
+      <line num="7" count="1" type="stmt"/>
+      <line num="21" count="0" type="stmt"/>
+      <line num="38" count="0" type="stmt"/>
+      <line num="46" count="0" type="stmt"/>
+      <line num="67" count="0" type="cond" truecount="0" falsecount="2"/>
+      <line num="74" count="0" type="stmt"/>
+      <line num="87" count="0" type="stmt"/>
+      <line num="89" count="0" type="cond" truecount="0" falsecount="2"/>
+      <line num="90" count="0" type="stmt"/>
+      <line num="91" count="0" type="stmt"/>
+      <line num="94" count="0" type="stmt"/>
+      <line num="96" count="0" type="stmt"/>
+      <line num="97" count="0" type="stmt"/>
+      <line num="104" count="0" type="stmt"/>
+      <line num="116" count="0" type="stmt"/>
+      <line num="118" count="0" type="cond" truecount="0" falsecount="2"/>
+      <line num="119" count="0" type="stmt"/>
+      <line num="120" count="0" type="stmt"/>
+      <line num="123" count="0" type="stmt"/>
+      <line num="125" count="0" type="stmt"/>
+      <line num="126" count="0" type="stmt"/>
+      <line num="133" count="0" type="stmt"/>
+      <line num="145" count="0" type="stmt"/>
+      <line num="152" count="0" type="stmt"/>
+      <line num="159" count="0" type="cond" truecount="0" falsecount="2"/>
+      <line num="166" count="0" type="stmt"/>
+      <line num="173" count="0" type="cond" truecount="0" falsecount="2"/>
+      <line num="180" count="2" type="stmt"/>
+      <line num="189" count="2" type="cond" truecount="2" falsecount="0"/>
+      <line num="196" count="2" type="stmt"/>
+      <line num="201" count="2" type="cond" truecount="2" falsecount="0"/>
+      <line num="203" count="1" type="stmt"/>
+      <line num="204" count="1" type="stmt"/>
+      <line num="205" count="1" type="stmt"/>
+      <line num="208" count="1" type="stmt"/>
+      <line num="209" count="1" type="stmt"/>
+      <line num="214" count="1" type="stmt"/>
+      <line num="215" count="1" type="stmt"/>
+      <line num="220" count="1" type="stmt"/>
+      <line num="221" count="1" type="stmt"/>
+      <line num="222" count="1" type="stmt"/>
+      <line num="225" count="1" type="stmt"/>
+      <line num="226" count="1" type="stmt"/>
+      <line num="229" count="1" type="stmt"/>
+      <line num="246" count="1" type="cond" truecount="1" falsecount="1"/>
+      <line num="253" count="0" type="stmt"/>
+      <line num="262" count="0" type="cond" truecount="0" falsecount="2"/>
+      <line num="269" count="0" type="stmt"/>
+      <line num="277" count="0" type="stmt"/>
+      <line num="279" count="0" type="cond" truecount="0" falsecount="2"/>
+      <line num="280" count="0" type="stmt"/>
+      <line num="281" count="0" type="stmt"/>
+      <line num="284" count="0" type="stmt"/>
+      <line num="285" count="0" type="stmt"/>
+      <line num="289" count="1" type="stmt"/>
+    </file>
+  </project>
+</coverage>
