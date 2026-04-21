@@ -8,22 +8,25 @@ class Spot {
   static async create({
     ownerId, title, description, address,
     latitude, longitude, 
-    vehicleTypes,      // ⭐ Array: ['Car', 'Bike', 'Truck']
-    pricesPerHour,     // ⭐ Array: [10.0, 5.0, 15.0]
-    imageUrls, totalSlots
+    vehicleTypes,      
+    slotsPerType,      
+    pricesPerHour,     
+    imageUrls, totalSlots, amenities
   }) {
     const result = await query(
       `INSERT INTO spots
-         (owner_id, title, description, address, latitude, longitude,
-          vehicle_types, prices_per_hour, image_urls, total_slots, available_slots)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10)
+        (owner_id, title, description, address, latitude, longitude,
+         vehicle_types, slots_per_type, prices_per_hour, image_urls, amenities, total_slots, available_slots, is_approved)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12, true)
        RETURNING *`,
       [
         ownerId, title, description, address,
         latitude, longitude,
         vehicleTypes || ['Car'],
+        slotsPerType || [1],
         pricesPerHour || [10.0],
-        imageUrls || [], 
+        imageUrls || [],
+        amenities || [],
         totalSlots || 1
       ]
     );
@@ -182,8 +185,8 @@ class Spot {
   // ============================================
   static async update(spotId, ownerId, updates) {
     const { title, description, address, latitude, longitude, 
-            vehicleTypes, pricesPerHour,  // ⭐ NEW
-            imageUrls, totalSlots } = updates;
+            vehicleTypes, slotsPerType, pricesPerHour,
+            imageUrls, totalSlots, amenities } = updates;
 
     const result = await query(
       `UPDATE spots
@@ -192,16 +195,18 @@ class Spot {
            address = COALESCE($3, address),
            latitude = COALESCE($4, latitude),
            longitude = COALESCE($5, longitude),
-           vehicle_types = COALESCE($6, vehicle_types),      // ⭐ NEW
-           prices_per_hour = COALESCE($7, prices_per_hour),  // ⭐ NEW
-           image_urls = COALESCE($8, image_urls),
-           total_slots = COALESCE($9, total_slots),
+           vehicle_types = COALESCE($6, vehicle_types),
+             slots_per_type = COALESCE($7, slots_per_type),
+             prices_per_hour = COALESCE($8, prices_per_hour),
+             image_urls = COALESCE($9, image_urls),
+             total_slots = COALESCE($10, total_slots),
+             amenities = COALESCE($11, amenities),
            updated_at = NOW()
-       WHERE id = $10 AND owner_id = $11
+           WHERE id = $12 AND owner_id = $13
        RETURNING *`,
       [title, description, address, latitude, longitude,
-       vehicleTypes, pricesPerHour,  // ⭐ NEW
-       imageUrls, totalSlots, spotId, ownerId]
+           vehicleTypes, slotsPerType, pricesPerHour,
+           imageUrls, totalSlots, amenities, spotId, ownerId]
     );
     return result.rows[0] || null;
   }

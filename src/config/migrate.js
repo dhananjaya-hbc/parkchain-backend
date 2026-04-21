@@ -26,6 +26,22 @@ const migrate = async () => {
     // Execute all the SQL
     await pool.query(schema);
 
+    // Backfill schema changes for existing databases
+    await pool.query(`
+      ALTER TABLE spots
+      ADD COLUMN IF NOT EXISTS amenities TEXT[] DEFAULT ARRAY[]::TEXT[];
+    `);
+
+    await pool.query(`
+      ALTER TABLE spots
+      ADD COLUMN IF NOT EXISTS slots_per_type INTEGER[] DEFAULT ARRAY[1];
+    `);
+
+    await pool.query(`
+      ALTER TABLE spots
+      ALTER COLUMN is_approved SET DEFAULT true;
+    `);
+
     console.log('✅ All tables created successfully!\n');
 
     // Verify: list all tables
