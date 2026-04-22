@@ -109,6 +109,58 @@ const adminLogin = async (req, res) => {
   }
 };
 
+// PUT /api/auth/admin/change-password
+const changePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    const userId = req.user.id;
+
+    // 1. Validate empty inputs
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ error: 'Current password and new password are required.' });
+    }
+
+    // 2. Fetch the admin user and current hashed password
+    const adminWithPassword = await User.findAdminByIdWithPassword(userId);
+    if (!adminWithPassword || !adminWithPassword.password) {
+      return res.status(401).json({ error: 'Administrator account not properly configured or not found.' });
+    }
+
+    // 3. Verify Old Password
+    const isPasswordValid = await bcrypt.compare(oldPassword, adminWithPassword.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Invalid current password.' });
+    }
+
+    // 4. Ensure old password is not reused
+    if (oldPassword === newPassword) {
+      return res.status(400).json({ error: 'New password cannot be the same as the current password.' });
+    }
+
+    // 5. Enforce Strong Password Policy (Min 12 chars, 1 upper, 1 lower, 1 number, 1 special)
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({ 
+        error: 'Password does not meet complexity requirements. It must be at least 12 characters, including one uppercase letter, one lowercase letter, one number, and one special character.' 
+      });
+    }
+
+    // 6. Hash new password and update in Database
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    await User.updatePassword(userId, hashedPassword);
+
+    return res.status(200).json({ message: 'Password successfully updated.' });
+
+  } catch (error) {
+    console.error('Password change error:', error.message);
+    return res.status(500).json({ error: 'An unexpected error occurred while changing the password.' });
+  }
+};
+
+
+
 const getMe = async (req, res) => {
   try {
     res.json({
@@ -120,4 +172,4 @@ const getMe = async (req, res) => {
   }
 };
 
-module.exports = { xamanLogin, adminLogin, getMe };
+module.exports = { xamanLogin, adminLogin, getMe, changePassword };
