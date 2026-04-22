@@ -1,8 +1,21 @@
-// src/routes/AuthRoutes.js
-const router = require('express').Router();
+const express = require('express');
+const rateLimit = require('express-rate-limit');
+const jwt = require('jsonwebtoken');
+require('dotenv').config();
+
 const AuthController = require('../controllers/AuthController');
 const authMiddleware = require('../middleware/AuthMiddleware');
-require('dotenv').config();
+const { query } = require('../config/db');
+
+const router = express.Router();
+
+const passwordChangeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 50, // Limit each IP address to 5 attempts per window
+  message: { error: 'Too many password change attempts from this IP. Please try again after 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // Xaman register/login for drivers and sellers
 router.post('/xaman', AuthController.xamanLogin);
@@ -10,16 +23,22 @@ router.post('/xaman', AuthController.xamanLogin);
 // Admin login with email + password
 router.post('/admin/login', AuthController.adminLogin);
 
+// Change password for admin users
+router.put(
+  '/admin/change-password', 
+  authMiddleware, 
+  passwordChangeLimiter, 
+  AuthController.changePassword
+);
+
 // Get current logged-in user
 router.get('/me', authMiddleware, AuthController.getMe);
+
 
 // ============================================
 // DEV ONLY: Test routes
 // ============================================
 if (process.env.NODE_ENV === 'development') {
-  const jwt = require('jsonwebtoken');
-  const { query } = require('../config/db');
-
   router.post('/dev/token', async (req, res) => {
     try {
       const { email } = req.body;

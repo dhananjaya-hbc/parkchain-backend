@@ -106,10 +106,32 @@ const getSellerTransactions = async (req, res) => {
   }
 };
 
+// GET /api/payments/seller/earnings-chart?period=week|month|year
+const getSellerEarningsChart = async (req, res) => {
+  try {
+    const sellerId = req.user.id;
+    const rawPeriod = String(req.query.period || 'week').toLowerCase();
+    const period = ['week', 'month', 'year'].includes(rawPeriod) ? rawPeriod : 'week';
+
+    const series = await Transaction.getSellerEarningsSeries(sellerId, period);
+
+    return res.json({
+      period,
+      currency: 'XRP',
+      labels: series.labels,
+      values: series.values,
+    });
+  } catch (error) {
+    console.error('Get seller earnings chart error:', error.message);
+    return res.status(500).json({ error: 'Failed to fetch seller earnings chart.' });
+  }
+};
+
 module.exports = {
   getBalance,
   getAdminBalance,
   getTransactions,
   getSellerTransactions,
+  getSellerEarningsChart,
   verifyTransaction
 };

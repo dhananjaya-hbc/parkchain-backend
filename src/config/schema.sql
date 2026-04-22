@@ -76,12 +76,14 @@ CREATE TABLE IF NOT EXISTS spots (
     longitude DECIMAL(11, 8) NOT NULL,
 
     vehicle_types TEXT[] DEFAULT ARRAY['Car'],
+    slots_per_type INTEGER[] DEFAULT ARRAY[1],
     prices_per_hour DECIMAL(10, 2)[] DEFAULT ARRAY[10.0],
 
     image_urls TEXT[],
+    amenities TEXT[] DEFAULT ARRAY[]::TEXT[],
 
     is_available BOOLEAN DEFAULT true,
-    is_approved BOOLEAN DEFAULT false,
+    is_approved BOOLEAN DEFAULT true,
 
     total_slots INTEGER DEFAULT 1,
     available_slots INTEGER DEFAULT 1,
