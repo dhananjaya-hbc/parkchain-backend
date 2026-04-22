@@ -53,6 +53,7 @@ app.get('/health/db', async (req, res) => {
 
 // API Routes
 app.use('/api/auth', require('./routes/AuthRoutes'));
+app.use('/api/users', require('./routes/UserRoutes'));
 app.use('/api/auth/xumm', require('./routes/XummRoutes')); 
 app.use('/api/spots', require('./routes/SpotRoutes'));
 app.use('/api/bookings', require('./routes/BookingRoutes'));
