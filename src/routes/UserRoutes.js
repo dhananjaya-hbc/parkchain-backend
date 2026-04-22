@@ -1,14 +1,10 @@
-import express from 'express';
-import { authenticate } from '../middleware/AuthMiddleware.js';
-import { authorize } from '../middleware/RoleMiddleware.js';
+const express = require('express');
+const authMiddleware = require('../middleware/AuthMiddleware');
+const UserController = require('../controllers/UserController');
+
 const router = express.Router();
 
-router.get('/profile', authenticate, (req, res) => {
-  res.json({ message: `Welcome user ${req.user.id}`, role: req.user.role });
-});
+// PUT /api/users/profile - Updates user profile (name, licensePlate, etc)
+router.put('/profile', authMiddleware, UserController.updateProfile);
 
-router.get('/admin', authenticate, authorize('admin'), (req, res) => {
-  res.json({ message: 'Admin access granted!' });
-});
-
-export default router;
+module.exports = router;

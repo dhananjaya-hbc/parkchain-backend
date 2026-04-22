@@ -163,9 +163,24 @@ const changePassword = async (req, res) => {
 
 const getMe = async (req, res) => {
   try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Determine profile completion status (only required for drivers)
+    // If the user name starts with 'Xaman User', they haven't explicitly set a name
+    const hasSetName = user.name && !user.name.startsWith('Xaman User');
+    const hasLicensePlate = !!user.license_no;
+    
+    const isProfileComplete = user.role === 'driver' 
+      ? (hasSetName && hasLicensePlate)
+      : true; // for sellers/admins, we might not require this step natively here yet
+
     res.json({
-      user: req.user,
-      authType: req.authType
+      user,
+      authType: req.authType,
+      isProfileComplete
     });
   } catch (error) {
     res.status(500).json({ error: 'Failed to get user info.' });
