@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS users (
     -- Admin: set in .env (not here)
     wallet_address VARCHAR(60),
     
+    license_no VARCHAR(255),
+    
     profile_image TEXT,
     kyc_session_id VARCHAR(255),
     kyc_status VARCHAR(50) DEFAULT 'unverified',
