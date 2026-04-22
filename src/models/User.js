@@ -15,6 +15,16 @@ class User {
     );
     return result.rows[0] || null;
   }
+  
+  // Used for admin login to get hashed password
+  static async findAdminByIdWithPassword(id) {
+    const result = await query(
+      'SELECT id, password, role FROM users WHERE id = $1 AND role = $2',
+      [id, 'admin']
+    );
+    return result.rows[0] || null;
+  }
+
 
   static async findByEmail(email) {
     const result = await query(
@@ -73,6 +83,18 @@ class User {
        WHERE id = $4
        RETURNING id, email, name, phone, role, wallet_address, profile_image, kyc_status, created_at, auth_type`,
       [name, phone, profileImage, id]
+    );
+    return result.rows[0] || null;
+  }
+
+  // Used for admin password reset flow
+  static async updatePassword(id, hashedPassword) {
+    const result = await query(
+      `UPDATE users
+       SET password = $1, updated_at = NOW()
+       WHERE id = $2
+       RETURNING id`,
+      [hashedPassword, id]
     );
     return result.rows[0] || null;
   }
