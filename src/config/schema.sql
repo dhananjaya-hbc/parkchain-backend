@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS spots (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
     owner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    kyb_submission_id UUID UNIQUE REFERENCES kyb_submissions(id) ON DELETE CASCADE,
 
     title VARCHAR(255) NOT NULL,
     description TEXT,
@@ -78,7 +79,6 @@ CREATE TABLE IF NOT EXISTS spots (
     prices_per_hour DECIMAL(10, 2)[] DEFAULT ARRAY[10.0],
 
     image_urls TEXT[],
-    amenities TEXT[] DEFAULT ARRAY[]::TEXT[],
 
     is_available BOOLEAN DEFAULT true,
     is_approved BOOLEAN DEFAULT true,

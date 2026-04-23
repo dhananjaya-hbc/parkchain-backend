@@ -66,7 +66,7 @@ class KybSubmission {
   // ============================================
   static async findByOwnerId(ownerId) {
     const result = await query(
-      `SELECT id, entity_name, status, admin_notes 
+      `SELECT id, entity_name, address, status, admin_notes 
        FROM kyb_submissions 
        WHERE owner_id = $1 
        ORDER BY created_at DESC`,

@@ -29,7 +29,7 @@ const migrate = async () => {
     // Backfill schema changes for existing databases
     await pool.query(`
       ALTER TABLE spots
-      ADD COLUMN IF NOT EXISTS amenities TEXT[] DEFAULT ARRAY[]::TEXT[];
+      ADD COLUMN IF NOT EXISTS kyb_submission_id UUID UNIQUE REFERENCES kyb_submissions(id) ON DELETE CASCADE;
     `);
 
     await pool.query(`
@@ -40,6 +40,21 @@ const migrate = async () => {
     await pool.query(`
       ALTER TABLE spots
       ALTER COLUMN is_approved SET DEFAULT true;
+    `);
+
+    await pool.query(`
+      ALTER TABLE spots
+      DROP COLUMN IF EXISTS amenities;
+    `);
+
+    await pool.query(`
+      ALTER TABLE spots
+      DROP COLUMN IF EXISTS blocked;
+    `);
+
+    await pool.query(`
+      ALTER TABLE spots
+      DROP COLUMN IF EXISTS is_blocked;
     `);
 
     console.log('✅ All tables created successfully!\n');
