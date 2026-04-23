@@ -26,8 +26,9 @@ router.get('/:id', authMiddleware, SpotController.getSpotById);
 
 // Seller routes
 router.post('/', authMiddleware, roleMiddleware('seller'), spotUpload.array('images'), SpotController.createSpot);
-router.put('/:id', authMiddleware, roleMiddleware('seller'), SpotController.updateSpot);
+router.put('/:id', authMiddleware, roleMiddleware('seller'), spotUpload.array('images'), SpotController.updateSpot);
 router.put('/:id/toggle', authMiddleware, roleMiddleware('seller'), SpotController.toggleAvailability);
+router.delete('/:id', authMiddleware, roleMiddleware('seller'), SpotController.deleteSpot);
 
 // Admin routes
 router.put('/:id/approve', authMiddleware, roleMiddleware('admin'), SpotController.approveSpot);

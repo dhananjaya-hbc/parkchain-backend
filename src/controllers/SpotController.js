@@ -5,6 +5,8 @@
 // Handles HTTP requests for parking spots
 
 const Spot = require('../models/Spot');
+const KybSubmission = require('../models/KybSubmission');
+const { query } = require('../config/db');
 
 // ============================================
 // POST /api/spots — Create a new spot (seller only)
@@ -38,6 +40,7 @@ const toArray = (value) => {
 const createSpot = async (req, res) => {
   try {
     const {
+      kybSubmissionId,
       title,
       description,
       address,
@@ -47,7 +50,6 @@ const createSpot = async (req, res) => {
       slotsPerType,
       pricesPerHour,
       imageUrls,
-      amenities,
     } = req.body;
 
     const uploadedImageUrls =
@@ -55,8 +57,32 @@ const createSpot = async (req, res) => {
         ? req.files.map((file) => file.path)
         : toArray(imageUrls);
 
+    let resolvedTitle = title;
+    let resolvedAddress = address;
+
+    if (kybSubmissionId) {
+      const kyb = await KybSubmission.findById(kybSubmissionId);
+
+      if (!kyb || kyb.owner_id !== req.user.id) {
+        return res.status(404).json({ error: 'KYB submission not found.' });
+      }
+
+      if (kyb.status !== 'approved') {
+        return res.status(403).json({ error: 'KYB must be approved before creating a spot.' });
+      }
+
+      const existingSpot = await Spot.findByKybSubmissionId(kybSubmissionId);
+
+      if (existingSpot) {
+        return res.status(409).json({ error: 'Spot already created for this KYB submission.' });
+      }
+
+      resolvedTitle = kyb.entity_name;
+      resolvedAddress = kyb.address;
+    }
+
     // Required fields
-    if (!title || !address || latitude === undefined || longitude === undefined) {
+    if (!resolvedTitle || !resolvedAddress || latitude === undefined || longitude === undefined) {
       return res.status(400).json({
         error: 'Required fields: title, address, latitude, longitude',
       });
@@ -112,16 +138,12 @@ const createSpot = async (req, res) => {
     const cleanPricesPerHour = completeRows.map((row) => parseFloat(row.price));
     const computedTotalSlots = cleanSlotsPerType.reduce((sum, slot) => sum + slot, 0);
 
-    // Amenities normalization
-    const cleanAmenities = toArray(amenities)
-      .map((item) => String(item).trim())
-      .filter((item) => item.length > 0);
-
     const spot = await Spot.create({
       ownerId: req.user.id,
-      title: String(title).trim(),
+      kybSubmissionId: kybSubmissionId || null,
+      title: String(resolvedTitle).trim(),
       description: String(description || '').trim(),
-      address: String(address).trim(),
+      address: String(resolvedAddress).trim(),
       latitude: parsedLatitude,
       longitude: parsedLongitude,
       vehicleTypes: cleanVehicleTypes,
@@ -129,7 +151,6 @@ const createSpot = async (req, res) => {
       pricesPerHour: cleanPricesPerHour,
       imageUrls: uploadedImageUrls,
       totalSlots: computedTotalSlots,
-      amenities: cleanAmenities,
     });
 
     const vehicleTypeCount = cleanVehicleTypes.length;
@@ -145,6 +166,10 @@ const createSpot = async (req, res) => {
     return res.status(500).json({ error: 'Failed to create spot.' });
   }
 };
+
+/*module.exports = {
+  createSpot,
+};*/
 
 // ============================================
 // GET /api/spots — Get spots (different views per role)
@@ -199,63 +224,57 @@ const getSpotById = async (req, res) => {
 // ============================================
 const updateSpot = async (req, res) => {
   try {
-    const updates = req.body;
-    
-    // ⭐ Validate row-based slot data if provided
-    if (updates.vehicleTypes || updates.slotsPerType || updates.pricesPerHour) {
-      if (!Array.isArray(updates.vehicleTypes) || !Array.isArray(updates.slotsPerType) || !Array.isArray(updates.pricesPerHour)) {
-        return res.status(400).json({
-          error: 'vehicleTypes, slotsPerType, and pricesPerHour must be arrays'
-        });
-      }
+    const updates = { ...req.body };
 
-      if (updates.vehicleTypes.length !== updates.slotsPerType.length || updates.vehicleTypes.length !== updates.pricesPerHour.length) {
-        return res.status(400).json({
-          error: 'vehicleTypes, slotsPerType, and pricesPerHour must have the same length'
-        });
-      }
+    const uploadedImageUrls =
+      Array.isArray(req.files) && req.files.length > 0
+        ? req.files.map((file) => file.path)
+        : null;
 
-      const hasIncompleteRow = updates.vehicleTypes.some((type, index) => {
-        const slots = updates.slotsPerType[index];
-        const price = updates.pricesPerHour[index];
-
-        return (
-          typeof type !== 'string' || type.trim().length === 0 ||
-          slots === undefined || slots === null || isNaN(slots) || Number(slots) <= 0 ||
-          price === undefined || price === null || isNaN(price) || Number(price) <= 0
-        );
-      });
-
-      if (hasIncompleteRow) {
-        return res.status(400).json({
-          error: 'Each row must have a vehicle type, slot count, and hourly rate'
-        });
-      }
-
-      updates.vehicleTypes = updates.vehicleTypes.map((type) => type.trim());
-      updates.slotsPerType = updates.slotsPerType.map((slot) => parseInt(slot, 10));
-      updates.pricesPerHour = updates.pricesPerHour.map((price) => parseFloat(price));
-      updates.totalSlots = updates.slotsPerType.reduce((sum, slot) => sum + slot, 0);
+    if (uploadedImageUrls) {
+      updates.imageUrls = uploadedImageUrls;
+    } else if (updates.imageUrls !== undefined) {
+      updates.imageUrls = toArray(updates.imageUrls)
+        .map((item) => String(item).trim())
+        .filter((item) => item.length > 0);
     }
+    
+    // Lot counts and vehicle type structure are locked for now.
+    // Ignore these fields even if sent by the client.
+    delete updates.vehicleTypes;
+    delete updates.slotsPerType;
+    delete updates.totalSlots;
 
-    if (updates.amenities !== undefined) {
-      if (!Array.isArray(updates.amenities)) {
-        return res.status(400).json({
-          error: 'amenities must be an array'
+    if (updates.pricesPerHour !== undefined) {
+      const currentSpot = await Spot.findById(req.params.id);
+
+      if (!currentSpot || currentSpot.owner_id !== req.user.id) {
+        return res.status(404).json({
+          error: 'Spot not found or you do not own this spot.'
         });
       }
 
-      const hasInvalidAmenity = updates.amenities.some(
-        (item) => typeof item !== 'string' || item.trim().length === 0
-      );
+      const currentVehicleTypes = Array.isArray(currentSpot.vehicle_types)
+        ? currentSpot.vehicle_types
+        : [];
 
-      if (hasInvalidAmenity) {
+      const parsedPrices = toArray(updates.pricesPerHour).map((price) => Number(price));
+
+      if (parsedPrices.length !== currentVehicleTypes.length) {
         return res.status(400).json({
-          error: 'Each amenity must be a non-empty string'
+          error: 'Hourly rates count must match the existing vehicle type count.'
         });
       }
 
-      updates.amenities = updates.amenities.map((item) => item.trim());
+      const hasInvalidPrice = parsedPrices.some((price) => !Number.isFinite(price) || price <= 0);
+
+      if (hasInvalidPrice) {
+        return res.status(400).json({
+          error: 'Each hourly rate must be a number greater than 0.'
+        });
+      }
+
+      updates.pricesPerHour = parsedPrices.map((price) => parseFloat(price));
     }
 
     const spot = await Spot.update(req.params.id, req.user.id, updates);
@@ -338,6 +357,49 @@ const rejectSpot = async (req, res) => {
 };
 
 // ============================================
+// DELETE /api/spots/:id — Delete spot (seller only)
+// ============================================
+const deleteSpot = async (req, res) => {
+  try {
+    const spotId = req.params.id;
+    const ownerId = req.user.id;
+
+    // 1. FIRST, get the KYB substitution ID attached to this spot
+    // (Adjust the SQL based on your actual table/column names)
+    const result = await query(
+      'SELECT kyb_submission_id FROM spots WHERE id = $1 AND owner_id = $2', 
+      [spotId, ownerId]
+    );
+    
+    // Check if the spot exists before continuing
+    const spotData = result.rows[0];
+    if (!spotData) {
+      return res.status(404).json({ error: 'Spot not found or you do not own this spot.' });
+    }
+
+    const kybSubmissionId = spotData.kyb_submission_id;
+
+    // 2. THEN, delete the spot
+    await Spot.delete(spotId, ownerId);
+
+    // 3. FINALLY, safely delete the KYB submission record if it exists
+    if (kybSubmissionId) {
+      await query(
+        'DELETE FROM kyb_submissions WHERE id = $1', 
+        [kybSubmissionId]
+      );
+    }
+
+    res.json({ message: 'Spot and associated KYB data deleted successfully.' });
+
+  } catch (error) {
+    console.error("Error deleting spot:", error);
+    res.status(500).json({ error: 'Failed to delete spot.' });
+  }
+};
+
+
+// ============================================
 // GET /api/spots/pending — Get pending spots (admin only)
 // ============================================
 const getPendingSpots = async (req, res) => {
@@ -357,5 +419,6 @@ module.exports = {
   toggleAvailability,
   approveSpot,
   rejectSpot,
+  deleteSpot,
   getPendingSpots
 };
