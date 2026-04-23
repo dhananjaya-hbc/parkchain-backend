@@ -9,12 +9,22 @@ class User {
   static async findById(id) {
     const result = await query(
       `SELECT id, email, name, phone, role, wallet_address,
-              profile_image, kyc_status, created_at, auth_type
+              profile_image, kyc_status, created_at, auth_type, license_no
        FROM users WHERE id = $1`,
       [id]
     );
     return result.rows[0] || null;
   }
+  
+  // Used for admin login to get hashed password
+  static async findAdminByIdWithPassword(id) {
+    const result = await query(
+      'SELECT id, password, role FROM users WHERE id = $1 AND role = $2',
+      [id, 'admin']
+    );
+    return result.rows[0] || null;
+  }
+
 
   static async findByEmail(email) {
     const result = await query(
@@ -43,7 +53,7 @@ class User {
     const result = await query(
       `INSERT INTO users (email, name, role, wallet_address, auth_type)
        VALUES ($1, $2, $3, $4, 'xaman')
-       RETURNING id, email, name, phone, role, wallet_address, kyc_status, created_at, auth_type`,
+       RETURNING id, email, name, phone, role, wallet_address, kyc_status, created_at, auth_type, license_no`,
       [mockEmail, mockName, role, walletAddress]
     );
     return result.rows[0];
@@ -63,16 +73,35 @@ class User {
   // UPDATE methods
   // ============================================
 
-  static async updateProfile(id, { name, phone, profileImage }) {
+  static async updateProfile(id, { name, phone, profileImage, licensePlate }) {
     const result = await query(
       `UPDATE users
        SET name = COALESCE($1, name),
            phone = COALESCE($2, phone),
            profile_image = COALESCE($3, profile_image),
+           license_no = COALESCE($4, license_no),
            updated_at = NOW()
-       WHERE id = $4
-       RETURNING id, email, name, phone, role, wallet_address, profile_image, kyc_status, created_at, auth_type`,
-      [name, phone, profileImage, id]
+       WHERE id = $5
+       RETURNING id, email, name, phone, role, wallet_address, profile_image, kyc_status, created_at, auth_type, license_no`,
+      [
+        name !== undefined ? name : null, 
+        phone !== undefined ? phone : null, 
+        profileImage !== undefined ? profileImage : null, 
+        licensePlate !== undefined ? licensePlate : null, 
+        id
+      ]
+    );
+    return result.rows[0] || null;
+  }
+
+  // Used for admin password reset flow
+  static async updatePassword(id, hashedPassword) {
+    const result = await query(
+      `UPDATE users
+       SET password = $1, updated_at = NOW()
+       WHERE id = $2
+       RETURNING id`,
+      [hashedPassword, id]
     );
     return result.rows[0] || null;
   }
