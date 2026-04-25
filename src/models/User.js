@@ -9,7 +9,7 @@ class User {
   static async findById(id) {
     const result = await query(
       `SELECT id, email, name, phone, role, wallet_address,
-              profile_image, kyc_status, created_at, auth_type, license_no, vehicle_type
+              profile_image, kyc_status, created_at, auth_type
        FROM users WHERE id = $1`,
       [id]
     );
@@ -53,7 +53,7 @@ class User {
     const result = await query(
       `INSERT INTO users (email, name, role, wallet_address, auth_type)
        VALUES ($1, $2, $3, $4, 'xaman')
-       RETURNING id, email, name, phone, role, wallet_address, kyc_status, created_at, auth_type, license_no, vehicle_type`,
+       RETURNING id, email, name, phone, role, wallet_address, kyc_status, created_at, auth_type`,
       [mockEmail, mockName, role, walletAddress]
     );
     return result.rows[0];
@@ -73,23 +73,19 @@ class User {
   // UPDATE methods
   // ============================================
 
-  static async updateProfile(id, { name, phone, profileImage, licensePlate, vehicleType }) {
+  static async updateProfile(id, { name, phone, profileImage }) {
     const result = await query(
       `UPDATE users
        SET name = COALESCE($1, name),
            phone = COALESCE($2, phone),
            profile_image = COALESCE($3, profile_image),
-           license_no = COALESCE($4, license_no),
-           vehicle_type = COALESCE($5, vehicle_type),
            updated_at = NOW()
-       WHERE id = $6
-       RETURNING id, email, name, phone, role, wallet_address, profile_image, kyc_status, created_at, auth_type, license_no, vehicle_type`,
+       WHERE id = $4
+       RETURNING id, email, name, phone, role, wallet_address, profile_image, kyc_status, created_at, auth_type`,
       [
         name !== undefined ? name : null, 
         phone !== undefined ? phone : null, 
         profileImage !== undefined ? profileImage : null, 
-        licensePlate !== undefined ? licensePlate : null, 
-        vehicleType !== undefined ? vehicleType : null,
         id
       ]
     );

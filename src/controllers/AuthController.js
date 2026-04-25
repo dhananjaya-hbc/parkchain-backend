@@ -171,17 +171,16 @@ const getMe = async (req, res) => {
     // Determine profile completion status (only required for drivers)
     // If the user name starts with 'Xaman User', they haven't explicitly set a name
     const hasSetName = user.name && !user.name.startsWith('Xaman User');
-    const hasLicensePlate = !!user.license_no;
+    const hasPhoneNumber = !!user.phone;
     
     const isProfileComplete = user.role === 'driver' 
-      ? (hasSetName && hasLicensePlate)
+      ? (hasSetName && hasPhoneNumber)
       : true; // for sellers/admins, we might not require this step natively here yet
 
     const responseUser = {
       ...user,
       fullName: user.name,
-      licensePlate: user.license_no || null,
-      vehicleType: user.vehicle_type || null
+      phoneNumber: user.phone || null
     };
 
     res.json({
