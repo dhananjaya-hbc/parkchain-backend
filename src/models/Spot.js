@@ -52,6 +52,7 @@ class Spot {
               u.name AS owner_name, 
               u.email AS owner_email,
               u.phone AS owner_phone,
+              u.created_at AS owner_created_at,
               u.wallet_address AS owner_wallet
        FROM spots s
        JOIN users u ON s.owner_id = u.id

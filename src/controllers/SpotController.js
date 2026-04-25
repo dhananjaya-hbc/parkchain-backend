@@ -357,6 +357,48 @@ const rejectSpot = async (req, res) => {
 };
 
 // ============================================
+// PUT /api/spots/:id/admin-toggle — Toggle spot active status (admin only)
+// ============================================
+const adminToggleSpot = async (req, res) => {
+  try {
+    const spotId = req.params.id;
+    const { is_active, is_available } = req.body;
+    const nextAvailability =
+      typeof is_active === 'boolean'
+        ? is_active
+        : is_available;
+
+    if (typeof nextAvailability !== 'boolean') {
+      return res.status(400).json({ error: 'is_active or is_available must be a boolean.' });
+    }
+
+    // Use existing schema column: spots.is_available
+    const result = await query(
+      'UPDATE spots SET is_available = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
+      [nextAvailability, spotId]
+    );
+
+    const updatedSpot = result.rows[0];
+
+    if (!updatedSpot) {
+      return res.status(404).json({ error: 'Spot not found.' });
+    }
+
+    console.log(`🛡️ Admin ${nextAvailability ? 'Activated' : 'Blocked'} spot: "${updatedSpot.title}"`);
+
+    res.json({ 
+      message: `Spot is now ${updatedSpot.is_available ? 'Active' : 'Blocked'}.`, 
+      spot: updatedSpot 
+    });
+
+  } catch (error) {
+    console.error('Admin toggle spot error:', error.message);
+    res.status(500).json({ error: 'Failed to toggle spot status.' });
+  }
+};
+
+
+// ============================================
 // DELETE /api/spots/:id — Delete spot (seller only)
 // ============================================
 const deleteSpot = async (req, res) => {
@@ -420,5 +462,6 @@ module.exports = {
   approveSpot,
   rejectSpot,
   deleteSpot,
+  adminToggleSpot,
   getPendingSpots
 };
