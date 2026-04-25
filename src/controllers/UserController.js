@@ -10,16 +10,14 @@ const updateProfile = async (req, res) => {
     
     // Allow various keys from frontend
     const name = req.body.name !== undefined ? req.body.name : req.body.fullName;
-    const licensePlate = req.body.licensePlate !== undefined ? req.body.licensePlate : req.body.license_no;
-    const vehicleType = req.body.vehicleType !== undefined ? req.body.vehicleType : req.body.vehicle_type;
+    const phone = req.body.phone !== undefined ? req.body.phone : req.body.phoneNumber;
 
-    console.log(`Parsed mapped data -> userId: ${userId}, name: ${name}, licensePlate: ${licensePlate}, vehicleType: ${vehicleType}`);
+    console.log(`Parsed mapped data -> userId: ${userId}, name: ${name}, phone: ${phone}`);
 
     // Only update allowed fields
     const updatedUser = await User.updateProfile(userId, { 
       name, 
-      licensePlate,
-      vehicleType
+      phone
     });
 
     console.log('Updated user DB response:', updatedUser ? 'Success' : 'Not found');
