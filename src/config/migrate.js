@@ -38,6 +38,11 @@ const migrate = async () => {
     `);
 
     await pool.query(`
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS vehicle_type VARCHAR(50);
+    `);
+
+    await pool.query(`
       ALTER TABLE spots
       ALTER COLUMN is_approved SET DEFAULT true;
     `);

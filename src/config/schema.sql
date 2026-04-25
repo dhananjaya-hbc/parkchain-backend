@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS users (
     wallet_address VARCHAR(60),
     
     license_no VARCHAR(255),
+    vehicle_type VARCHAR(50),
     
     profile_image TEXT,
     kyc_session_id VARCHAR(255),

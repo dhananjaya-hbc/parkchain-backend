@@ -177,8 +177,15 @@ const getMe = async (req, res) => {
       ? (hasSetName && hasLicensePlate)
       : true; // for sellers/admins, we might not require this step natively here yet
 
+    const responseUser = {
+      ...user,
+      fullName: user.name,
+      licensePlate: user.license_no || null,
+      vehicleType: user.vehicle_type || null
+    };
+
     res.json({
-      user,
+      user: responseUser,
       authType: req.authType,
       isProfileComplete
     });
