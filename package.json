@@ -10,7 +10,10 @@
     "migrate": "node src/config/migrate.js",
     "seed:admin": "node src/scripts/seedAdmin.js",
     "generate-admin-wallet": "node src/scripts/generateAdminWallet.js",
-    "generate:wallet": "node src/scripts/generateAdminWallet.js"
+    "generate:wallet": "node src/scripts/generateAdminWallet.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
@@ -19,7 +22,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^4.21.0",
-    "express-rate-limit": "^8.3.2",
+    "express-rate-limit": "^8.4.1",
     "helmet": "^7.2.0",
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.0",
@@ -33,6 +36,22 @@
     "xumm-sdk": "^1.11.2"
   },
   "devDependencies": {
-    "nodemon": "^3.1.4"
+    "@types/jest": "^30.0.0",
+    "jest": "^30.3.0",
+    "jest-mock": "^30.3.0",
+    "nodemon": "^3.1.4",
+    "supertest": "^7.2.2"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/__tests__/**/*.test.js"
+    ],
+    "collectCoverageFrom": [
+      "src/controllers/**/*.js",
+      "src/models/**/*.js",
+      "src/services/**/*.js"
+    ],
+    "coverageDirectory": "coverage"
   }
 }
