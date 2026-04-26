@@ -2,6 +2,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const { buildProfileResponse } = require('./UserController');
 require('dotenv').config();
 
 const generateToken = (userId, role) => {
@@ -51,6 +52,8 @@ const xamanLogin = async (req, res) => {
         profile_image: user.profile_image,
         auth_type: user.auth_type,
         kyc_status: user.kyc_status,
+        license_no: user.license_no,
+        vehicle_type: user.vehicle_type,
         created_at: user.created_at
       }
     });
@@ -168,26 +171,7 @@ const getMe = async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Determine profile completion status (only required for drivers)
-    // If the user name starts with 'Xaman User', they haven't explicitly set a name
-    const hasSetName = user.name && !user.name.startsWith('Xaman User');
-    const hasPhoneNumber = !!user.phone;
-    
-    const isProfileComplete = user.role === 'driver' 
-      ? (hasSetName && hasPhoneNumber)
-      : true; // for sellers/admins, we might not require this step natively here yet
-
-    const responseUser = {
-      ...user,
-      fullName: user.name,
-      phoneNumber: user.phone || null
-    };
-
-    res.json({
-      user: responseUser,
-      authType: req.authType,
-      isProfileComplete
-    });
+    res.status(200).json(buildProfileResponse(user));
   } catch (error) {
     res.status(500).json({ error: 'Failed to get user info.' });
   }

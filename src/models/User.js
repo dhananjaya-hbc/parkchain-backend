@@ -9,7 +9,7 @@ class User {
   static async findById(id) {
     const result = await query(
       `SELECT id, email, name, phone, role, wallet_address,
-              profile_image, kyc_status, created_at, auth_type
+              profile_image, kyc_status, created_at, auth_type, license_no, vehicle_type
        FROM users WHERE id = $1`,
       [id]
     );
@@ -53,7 +53,7 @@ class User {
     const result = await query(
       `INSERT INTO users (email, name, role, wallet_address, auth_type)
        VALUES ($1, $2, $3, $4, 'xaman')
-       RETURNING id, email, name, phone, role, wallet_address, kyc_status, created_at, auth_type`,
+       RETURNING id, email, name, phone, role, wallet_address, kyc_status, created_at, auth_type, license_no, vehicle_type`,
       [mockEmail, mockName, role, walletAddress]
     );
     return result.rows[0];
@@ -73,20 +73,24 @@ class User {
   // UPDATE methods
   // ============================================
 
-  static async updateProfile(id, { name, phone, profileImage }) {
+  static async updateProfile(id, { name, phone, profileImage, licenseNo, vehicleType }) {
     const result = await query(
       `UPDATE users
        SET name = COALESCE($1, name),
            phone = COALESCE($2, phone),
            profile_image = COALESCE($3, profile_image),
+           license_no = COALESCE($5, license_no),
+           vehicle_type = COALESCE($6, vehicle_type),
            updated_at = NOW()
        WHERE id = $4
-       RETURNING id, email, name, phone, role, wallet_address, profile_image, kyc_status, created_at, auth_type`,
+       RETURNING id, email, name, phone, role, wallet_address, profile_image, kyc_status, created_at, auth_type, license_no, vehicle_type`,
       [
         name !== undefined ? name : null, 
         phone !== undefined ? phone : null, 
         profileImage !== undefined ? profileImage : null, 
-        id
+        id,
+        licenseNo !== undefined ? licenseNo : null,
+        vehicleType !== undefined ? vehicleType : null
       ]
     );
     return result.rows[0] || null;
@@ -123,7 +127,7 @@ class User {
 
   static async findAll(role = null) {
     let sql = `SELECT id, email, name, phone, role, wallet_address,
-                      kyc_status, created_at, auth_type FROM users`;
+                      kyc_status, created_at, auth_type, license_no, vehicle_type FROM users`;
     const params = [];
 
     if (role) {
