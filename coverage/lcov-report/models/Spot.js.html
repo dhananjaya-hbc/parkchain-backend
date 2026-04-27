@@ -23,16 +23,15 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">5.4% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/37</span>
+                <span class='fraction'>2/37</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/35</span>
                 <span class='fraction'>0/35</span>
             </div>
         
@@ -41,14 +40,13 @@
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
                 <span class='fraction'>0/15</span>
-                <span class='fraction'>0/15</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">5.4% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/37</span>
+                <span class='fraction'>2/37</span>
             </div>
         
             
@@ -314,7 +312,7 @@
 <a name='L247'></a><a href='#L247'>247</a>
 <a name='L248'></a><a href='#L248'>248</a>
 <a name='L249'></a><a href='#L249'>249</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -354,16 +352,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -373,7 +361,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -491,19 +478,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -585,8 +559,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// src/models/Spot.js
-const { query } = <span class="cstat-no" title="statement not covered" >require('../config/db');</span>
+<span class="cline-any cline-yes">2x</span></td><td class="text"><pre class="prettyprint lang-js">// src/models/Spot.js
+const { query } = require('../config/db');
 &nbsp;
 class Spot {
   // ============================================
@@ -594,12 +568,7 @@ class Spot {
   // ============================================
 <span class="fstat-no" title="function not covered" >  st</span>atic async create({
     ownerId, kybSubmissionId = <span class="branch-0 cbranch-no" title="branch not covered" >null,</span> title, description, address,
-    ownerId, kybSubmissionId = <span class="branch-0 cbranch-no" title="branch not covered" >null,</span> title, description, address,
     latitude, longitude, 
-    vehicleTypes,      // ⭐ Array: ['Car', 'Bike', 'Truck']
-    slotsPerType,      // ⭐ Array: [2, 3, 1]
-    pricesPerHour,     // ⭐ Array: [10.0, 5.0, 15.0]
-    imageUrls, totalSlots
     vehicleTypes,      // ⭐ Array: ['Car', 'Bike', 'Truck']
     slotsPerType,      // ⭐ Array: [2, 3, 1]
     pricesPerHour,     // ⭐ Array: [10.0, 5.0, 15.0]
@@ -609,12 +578,9 @@ class Spot {
       `INSERT INTO spots
         (owner_id, kyb_submission_id, title, description, address, latitude, longitude,
          vehicle_types, slots_per_type, prices_per_hour, image_urls, total_slots, available_slots, is_approved)
-        (owner_id, kyb_submission_id, title, description, address, latitude, longitude,
-         vehicle_types, slots_per_type, prices_per_hour, image_urls, total_slots, available_slots, is_approved)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12, true)
        RETURNING *`,
       [
-        ownerId, kybSubmissionId, title, description, address,
         ownerId, kybSubmissionId, title, description, address,
         latitude, longitude,
         vehicleTypes || ['Car'],
@@ -639,17 +605,6 @@ class Spot {
   }
 &nbsp;
   // ============================================
-  // FIND spot by KYB submission ID
-  // ============================================
-<span class="fstat-no" title="function not covered" >  st</span>atic async findByKybSubmissionId(kybSubmissionId) {
-    const result = <span class="cstat-no" title="statement not covered" >await query(</span>
-      `SELECT * FROM spots WHERE kyb_submission_id = $1 LIMIT 1`,
-      [kybSubmissionId]
-    );
-<span class="cstat-no" title="statement not covered" >    return result.rows[0] || null;</span>
-  }
-&nbsp;
-  // ============================================
   // FIND spot by ID (with owner details)
   // ============================================
 <span class="fstat-no" title="function not covered" >  st</span>atic async findById(id) {
@@ -658,7 +613,6 @@ class Spot {
               u.name AS owner_name, 
               u.email AS owner_email,
               u.phone AS owner_phone,
-              u.created_at AS owner_created_at,
               u.created_at AS owner_created_at,
               u.wallet_address AS owner_wallet
        FROM spots s
@@ -763,19 +717,6 @@ class Spot {
   }
 &nbsp;
   // ============================================
-  // DELETE a spot by owner (seller action)
-  // ============================================
-<span class="fstat-no" title="function not covered" >  st</span>atic async delete(spotId, ownerId) {
-    const result = <span class="cstat-no" title="statement not covered" >await query(</span>
-      `DELETE FROM spots
-       WHERE id = $1 AND owner_id = $2
-       RETURNING *`,
-      [spotId, ownerId]
-    );
-<span class="cstat-no" title="statement not covered" >    return result.rows[0] || null;</span>
-  }
-&nbsp;
-  // ============================================
   // TOGGLE availability (seller action)
   // ============================================
 <span class="fstat-no" title="function not covered" >  st</span>atic async toggleAvailability(spotId, ownerId) {
@@ -830,7 +771,6 @@ class Spot {
 <span class="fstat-no" title="function not covered" >  st</span>atic async update(spotId, ownerId, updates) {
     const { title, description, address, latitude, longitude, 
             pricesPerHour, imageUrls } = <span class="cstat-no" title="statement not covered" >updates;</span>
-            pricesPerHour, imageUrls } = <span class="cstat-no" title="statement not covered" >updates;</span>
 &nbsp;
     const result = <span class="cstat-no" title="statement not covered" >await query(</span>
       `UPDATE spots
@@ -841,14 +781,10 @@ class Spot {
            longitude = COALESCE($5, longitude),
            prices_per_hour = COALESCE($6, prices_per_hour),
              image_urls = COALESCE($7, image_urls),
-           prices_per_hour = COALESCE($6, prices_per_hour),
-             image_urls = COALESCE($7, image_urls),
            updated_at = NOW()
-           WHERE id = $8 AND owner_id = $9
            WHERE id = $8 AND owner_id = $9
        RETURNING *`,
       [title, description, address, latitude, longitude,
-           pricesPerHour, imageUrls, spotId, ownerId]
            pricesPerHour, imageUrls, spotId, ownerId]
     );
 <span class="cstat-no" title="statement not covered" >    return result.rows[0] || null;</span>
@@ -871,14 +807,14 @@ class Spot {
   }
 }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >module.exports = Spot;</span></pre></td></tr></table></pre>
+module.exports = Spot;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-27T07:39:25.317Z
+                at 2026-04-27T14:15:15.703Z
             </div>
         <script src="../prettify.js"></script>
         <script>
