@@ -3,12 +3,6 @@
 // DATABASE MIGRATION SCRIPT
 // ============================================
 // Reads schema.sql and executes it against Neon PostgreSQL
-//
-// Usage: npm run migrate
-//
-// Safe to run multiple times because we use "CREATE TABLE IF NOT EXISTS"
-// It won't destroy existing data
-
 const fs = require('fs');
 const path = require('path');
 const { pool } = require('./db');

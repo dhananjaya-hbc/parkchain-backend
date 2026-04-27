@@ -1,7 +1,4 @@
 // src/controllers/BookingController.js
-// ============================================
-// BOOKING CONTROLLER
-// ============================================
 
 const Booking = require('../models/Booking');
 const Spot = require('../models/Spot');
@@ -35,9 +32,9 @@ const createBooking = async (req, res) => {
     }
 
     // ── Validate vehicle type ─────────────────────────────
-    const vehicleTypes   = spot.vehicle_types   || ['Car'];
-    const pricesPerHour  = spot.prices_per_hour || [10.0];
-    const slotsPerType   = spot.slots_per_type  || [1];
+    const vehicleTypes = spot.vehicle_types || ['Car'];
+    const pricesPerHour = spot.prices_per_hour || [10.0];
+    const slotsPerType = spot.slots_per_type || [1];
 
     const vehicleIndex = vehicleTypes.indexOf(vehicleType);
     if (vehicleIndex === -1) {
@@ -50,11 +47,11 @@ const createBooking = async (req, res) => {
 
     // ── Get this vehicle type's slot count & price ────────
     const slotsForThisType = parseInt(slotsPerType[vehicleIndex]) || 1;
-    const pricePerHour     = parseFloat(pricesPerHour[vehicleIndex]);
+    const pricePerHour = parseFloat(pricesPerHour[vehicleIndex]);
 
     // ── Validate times ────────────────────────────────────
     const start = new Date(startTime);
-    const end   = new Date(endTime);
+    const end = new Date(endTime);
 
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       return res.status(400).json({
@@ -100,12 +97,12 @@ const createBooking = async (req, res) => {
     }
 
     // ── Calculate price ───────────────────────────────────
-    const durationMs             = end - start;
-    const expectedDurationHours  = parseFloat((durationMs / (1000 * 60 * 60)).toFixed(2));
-    const expectedPriceXrp       = parseFloat((expectedDurationHours * pricePerHour).toFixed(6));
-    const totalPriceXrp          = expectedPriceXrp;
-    const adminFeeXrp            = parseFloat((totalPriceXrp * 0.20).toFixed(6));
-    const sellerAmountXrp        = parseFloat((totalPriceXrp * 0.80).toFixed(6));
+    const durationMs = end - start;
+    const expectedDurationHours = parseFloat((durationMs / (1000 * 60 * 60)).toFixed(2));
+    const expectedPriceXrp = parseFloat((expectedDurationHours * pricePerHour).toFixed(6));
+    const totalPriceXrp = expectedPriceXrp;
+    const adminFeeXrp = parseFloat((totalPriceXrp * 0.20).toFixed(6));
+    const sellerAmountXrp = parseFloat((totalPriceXrp * 0.80).toFixed(6));
 
     // ── Create booking ────────────────────────────────────
     const booking = await Booking.create({
@@ -152,23 +149,11 @@ const createBooking = async (req, res) => {
 
 // ============================================
 // GET /api/bookings/availability/:spotId
-// Query: ?startTime=...&endTime=...
-// Returns slot availability per vehicle type
 // ============================================
 const getSpotAvailability = async (req, res) => {
   try {
     const { spotId } = req.params;
     const { startTime, endTime } = req.query;
-
-    // ── DEBUG LOGS ──────────────────────────────────────
-    console.log('═══════════════════════════════════════════');
-    console.log('🔍 AVAILABILITY CHECK');
-    console.log('═══════════════════════════════════════════');
-    console.log('📍 Spot ID:  ', spotId);
-    console.log('🕐 Start:    ', startTime);
-    console.log('🕐 End:      ', endTime);
-    console.log('👤 User:     ', req.user?.id, req.user?.role);
-    console.log('═══════════════════════════════════════════');
 
     if (!startTime || !endTime) {
       return res.status(400).json({
@@ -181,18 +166,14 @@ const getSpotAvailability = async (req, res) => {
       return res.status(404).json({ error: 'Spot not found.' });
     }
 
-    const vehicleTypes  = spot.vehicle_types   || ['Car'];
-    const slotsPerType  = spot.slots_per_type  || [1];
+    const vehicleTypes = spot.vehicle_types || ['Car'];
+    const slotsPerType = spot.slots_per_type || [1];
     const pricesPerHour = spot.prices_per_hour || [10.0];
 
-    console.log('🚗 Vehicle types:', vehicleTypes);
-    console.log('🅿️  Slots per type:', slotsPerType);
 
     const bookedCounts = await Booking.getAvailabilityByTimeRange(
       spotId, startTime, endTime
     );
-
-    console.log('📊 Booked counts:', bookedCounts);
 
     const bookedMap = {};
     bookedCounts.forEach(row => {
@@ -200,31 +181,29 @@ const getSpotAvailability = async (req, res) => {
     });
 
     const availability = vehicleTypes.map((type, index) => {
-      const totalSlots     = parseInt(slotsPerType[index])  || 1;
-      const bookedSlots    = bookedMap[type]                || 0;
+      const totalSlots = parseInt(slotsPerType[index]) || 1;
+      const bookedSlots = bookedMap[type] || 0;
       const availableSlots = Math.max(0, totalSlots - bookedSlots);
 
       return {
-        vehicleType:     type,
-        pricePerHour:    parseFloat(pricesPerHour[index]),
+        vehicleType: type,
+        pricePerHour: parseFloat(pricesPerHour[index]),
         totalSlots,
         bookedSlots,
         availableSlots,
-        isAvailable:     availableSlots > 0
+        isAvailable: availableSlots > 0
       };
     });
 
-    console.log('✅ Availability result:', availability);
-
     res.json({
       spotId,
-      spotTitle:     spot.title,
+      spotTitle: spot.title,
       requestedTime: { startTime, endTime },
       availability
     });
 
   } catch (error) {
-    console.error('❌ getSpotAvailability error:', error);
+    console.error('getSpotAvailability error:', error);
     res.status(500).json({ error: 'Failed to get availability.' });
   }
 };
@@ -364,14 +343,14 @@ const checkOut = async (req, res) => {
         : 'Checked out on time!',
       booking,
       summary: {
-        expectedDuration:  parseFloat(booking.expected_duration_hours),
-        actualDuration:    parseFloat(booking.actual_duration_hours),
-        overtimeHours:     parseFloat(booking.overtime_hours),
-        expectedPrice:     parseFloat(booking.expected_price_xrp),
-        overtimePrice:     parseFloat(booking.overtime_price_xrp),
-        totalPrice:        parseFloat(booking.total_price_xrp),
-        adminFee:          parseFloat(booking.admin_fee_xrp),
-        sellerAmount:      parseFloat(booking.seller_amount_xrp)
+        expectedDuration: parseFloat(booking.expected_duration_hours),
+        actualDuration: parseFloat(booking.actual_duration_hours),
+        overtimeHours: parseFloat(booking.overtime_hours),
+        expectedPrice: parseFloat(booking.expected_price_xrp),
+        overtimePrice: parseFloat(booking.overtime_price_xrp),
+        totalPrice: parseFloat(booking.total_price_xrp),
+        adminFee: parseFloat(booking.admin_fee_xrp),
+        sellerAmount: parseFloat(booking.seller_amount_xrp)
       }
     });
   } catch (error) {

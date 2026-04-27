@@ -88,11 +88,7 @@ const verifyTransaction = async (req, res) => {
 const getSellerTransactions = async (req, res) => {
   try {
     const sellerId = req.user.id;
-    console.log('🔍 Fetching transactions for seller ID:', sellerId);
-
     const transactions = await Transaction.findBySellerId(sellerId);
-    console.log('📊 Found transactions:', transactions.length);
-
     const earnings = await Transaction.getSellerEarnings(sellerId);
 
     res.json({
@@ -101,7 +97,7 @@ const getSellerTransactions = async (req, res) => {
       earnings
     });
   } catch (error) {
-    console.error('❌ Get seller transactions error:', error);
+    console.error('Get seller transactions error:', error);
     res.status(500).json({ error: 'Failed to fetch seller transactions.' });
   }
 };

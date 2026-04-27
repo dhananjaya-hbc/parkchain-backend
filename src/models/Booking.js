@@ -1,7 +1,4 @@
 // src/models/Booking.js
-// ============================================
-// BOOKING MODEL
-// ============================================
 
 const { query } = require('../config/db');
 
@@ -237,7 +234,7 @@ class Booking {
        WHERE id = $7
        RETURNING *`,
       [actualDurationHours, overtimeHours, overtimePrice,
-       totalPrice, adminFee, sellerAmount, id]
+        totalPrice, adminFee, sellerAmount, id]
     );
 
     return result.rows[0] || null;
@@ -284,9 +281,6 @@ class Booking {
 
   // ============================================
   // COUNT OVERLAPPING BOOKINGS PER VEHICLE TYPE
-  // ✅ THIS IS THE KEY FIX
-  // Checks only bookings for the same vehicle type
-  // against that vehicle type's slot count
   // ============================================
   static async countOverlappingByVehicleType(
     spotId,
@@ -315,10 +309,9 @@ class Booking {
     return parseInt(result.rows[0].count);
   }
 
-  // ============================================
-  // GET AVAILABILITY for a spot on a time range
-  // Returns per-vehicle-type availability info
-  // ============================================
+  // ========================================================================================
+  // GET AVAILABILITY for a spot on a time range & Returns per-vehicle-type availability info
+  // ========================================================================================
   static async getAvailabilityByTimeRange(spotId, startTime, endTime) {
     const result = await query(
       `SELECT 
