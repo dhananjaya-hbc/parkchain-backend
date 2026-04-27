@@ -50,8 +50,8 @@ app.get('/health/db', async (req, res) => {
     res.status(500).json({ status: 'error', error: error.message });
   }
 });
-
 // API Routes
+
 app.use('/api/auth', require('./routes/AuthRoutes'));
 app.use('/api/users', require('./routes/UserRoutes'));
 app.use('/api/auth/xumm', require('./routes/XummRoutes')); 
@@ -69,6 +69,9 @@ app.use('/api/admin/kyb', require('./routes/AdminKybRoutes'));
 
 // Seller Dashboard Routes
 app.use('/api/seller/kyb', require('./routes/SellerKybRoutes'));
+
+// Notifications Routes
+app.use('/api/notifications', require('./routes/NotificationRoutes'));
 
 app.get('/', (req, res) => {
   res.json({

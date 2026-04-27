@@ -157,6 +157,13 @@ class User {
     return result.rows[0] || null;
   }
 
+  static async getAdminUser() {
+    const result = await query(
+      `SELECT id FROM users WHERE role = 'admin' ORDER BY created_at ASC LIMIT 1`
+    );
+    return result.rows[0] || null;
+  }
+
   static async adminExists(email) {
     const result = await query(
       'SELECT id FROM users WHERE email = $1 AND role = $2',
