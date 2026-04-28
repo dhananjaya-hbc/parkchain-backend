@@ -1,7 +1,5 @@
-// src/middleware/AuthMiddleware.js
 // ============================================
 // NOW: Only verifies our own JWT tokens
-// Web3Auth JWKS verification REMOVED
 // ============================================
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
