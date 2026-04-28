@@ -14,7 +14,7 @@ class FraudDetectionService {
   // MAIN: Analyze a booking for fraud
   // ============================================
   async analyzeBooking(driverId, spotId, startTime, endTime, totalAmountXrp) {
-    console.log(`\nAI Fraud Detection — Analyzing booking...`);
+    console.log(`\nFraud Detection — Analyzing booking...`);
 
     const warnings = [];
     let riskScore = 0;

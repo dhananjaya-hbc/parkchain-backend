@@ -110,7 +110,7 @@ class User {
   // WALLET methods
   // ============================================
 
-  // Only returns wallet_address (no seed — Xaman users manage their own keys)
+  // Only returns wallet_address 
   static async getWalletAddress(id) {
     const result = await query(
       'SELECT wallet_address FROM users WHERE id = $1',

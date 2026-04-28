@@ -74,7 +74,7 @@ const createBooking = async (req, res) => {
     }
 
     // ── Check slot availability PER VEHICLE TYPE ──────────
-    // e.g. Car has 10 slots, Bike has 5 slots — checked separately
+    //e.g - Car has 10 slots, Bike has 5 slots — checked separately
     const overlappingCount = await Booking.countOverlappingByVehicleType(
       spotId,
       vehicleType,

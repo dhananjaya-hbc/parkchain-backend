@@ -3,7 +3,6 @@
 //   1. Driver pays Admin via Xaman App
 //   2. Backend VERIFIES the transaction hash
 //   3. Backend PAYS Seller (80%) using Admin's seed
-//
 
 const xrpl = require('xrpl');
 require('dotenv').config();
@@ -22,13 +21,13 @@ class XrplService {
     if (this.client && this.client.isConnected()) return;
     this.client = new xrpl.Client(this.networkUrl);
     await this.client.connect();
-    console.log('🔗 Connected to XRPL:', this.networkUrl);
+    console.log('Connected to XRPL:', this.networkUrl);
   }
 
   async disconnect() {
     if (this.client && this.client.isConnected()) {
       await this.client.disconnect();
-      console.log('🔌 Disconnected from XRPL');
+      console.log('Disconnected from XRPL');
     }
   }
 
@@ -60,17 +59,12 @@ class XrplService {
   }
 
   /**
-   
-   * The Driver pays the Admin via Xaman App.
-   * The App sends us the Transaction Hash.
-   * We check the blockchain to confirm it's real.
-   
-   * @param {string} txHash - The hash from the Xaman app
-   * @returns {Object} { success: true, amount: 10.5 } or { success: false }
+   * @param {string} txHash 
+   * @returns {Object} 
    */
   async verifyDriverPayment(txHash) {
     await this.ensureConnected();
-    console.log(`🔍 Verifying transaction: ${txHash}`);
+    console.log(`Verifying transaction: ${txHash}`);
 
     try {
       const response = await this.client.request({
@@ -107,7 +101,7 @@ class XrplService {
       };
 
     } catch (error) {
-      console.log('❌ Transaction not found or invalid');
+      console.log('Transaction not found or invalid');
       return { success: false, reason: 'Invalid hash' };
     }
   }
@@ -142,9 +136,9 @@ class XrplService {
   /**
    * Pay Seller (The 80% Split)
    * Flow: Admin Wallet -> Seller Wallet
-   * @param {string} sellerAddress - Where to send money
-   * @param {number} amountXrp - How much (80% of booking)
-   * @param {string} bookingId - For the memo
+   * @param {string} sellerAddress  
+   * @param {number} amountXrp  
+   * @param {string} bookingId  
    */
   async paySeller(sellerAddress, amountXrp, bookingId) {
     await this.ensureConnected();

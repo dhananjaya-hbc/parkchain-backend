@@ -53,18 +53,18 @@ router.post('/verify', async (req, res) => {
     }
 
     const walletAddress = result.walletAddress;
-    console.log(`✅ Xaman sign-in verified: ${walletAddress}`);
+    console.log(`Xaman sign-in verified: ${walletAddress}`);
 
     let user = await User.findByWalletAddress(walletAddress);
 
     if (user) {
-      console.log(`🔑 Existing user logged in via Xaman app: ${walletAddress}`);
+      console.log(`Existing user logged in via Xaman app: ${walletAddress}`);
     } else {
       user = await User.createXamanUser({
         walletAddress: walletAddress,
         role: 'driver'
       });
-      console.log(`🆕 New user registered via Xaman app: ${walletAddress}`);
+      console.log(`New user registered via Xaman app: ${walletAddress}`);
     }
 
     const token = generateToken(user.id, user.role);
@@ -127,11 +127,7 @@ router.post('/create-payment', async (req, res) => {
     const totalXrp = parseFloat(booking.total_price_xrp);
     const amountDrops = Math.floor(totalXrp * 1000000).toString();
 
-    console.log(`💳 Creating Xaman payment payload:`);
-    console.log(`   Booking: ${bookingId}`);
-    console.log(`   Amount: ${totalXrp} XRP (${amountDrops} drops)`);
-    console.log(`   From: ${user.wallet_address}`);
-    console.log(`   To: ${adminAddress}`);
+    console.log(`Creating Xaman payment payload:`);
 
     const payload = await xummService.createPaymentPayload(
       user.wallet_address,
@@ -186,7 +182,7 @@ router.post('/verify-payment', async (req, res) => {
       });
     }
 
-    console.log(`✅ Xaman payment signed by: ${result.walletAddress}`);
+    console.log(`Xaman payment signed by: ${result.walletAddress}`);
 
     const Booking = require('../models/Booking');
     const booking = await Booking.findById(bookingId);
@@ -198,7 +194,7 @@ router.post('/verify-payment', async (req, res) => {
     const payloadDetails = await xummService.getPayloadDetails(uuid);
     const txHash = payloadDetails?.response?.txid || null;
 
-    console.log(`🔗 Transaction hash from Xaman: ${txHash}`);
+    console.log(`Transaction hash from Xaman: ${txHash}`);
 
     const Transaction = require('../models/Transaction');
     const totalXrp = parseFloat(booking.total_price_xrp);
@@ -222,10 +218,6 @@ router.post('/verify-payment', async (req, res) => {
 
     const sellerAmount = parseFloat(booking.seller_amount_xrp);
     const adminCommission = parseFloat(booking.admin_fee_xrp);
-
-    console.log(`📌 Admin → Seller: ${sellerAmount} XRP (80%)`);
-
-    // ✅ FIXED: Use paySeller instead of sendPayment
     const xrplService = require('../services/XrplService');
     const adminToSellerTx = await xrplService.paySeller(
       booking.owner_wallet,
@@ -250,7 +242,7 @@ router.post('/verify-payment', async (req, res) => {
       await Booking.updateStatus(bookingId, 'confirmed');
       await Booking.updatePaymentStatus(bookingId, 'split_completed');
 
-      console.log('🎉 Xaman payment fully processed!');
+      console.log('Xaman payment fully processed!');
 
       res.json({
         message: 'Payment successful! Booking confirmed.',
@@ -281,7 +273,7 @@ router.post('/verify-payment', async (req, res) => {
         }
       });
     } else {
-      console.error('❌ Admin → Seller payment failed');
+      console.error('Admin → Seller payment failed');
       await Booking.updatePaymentStatus(bookingId, 'failed');
       res.status(500).json({ error: 'Seller payout failed.' });
     }
