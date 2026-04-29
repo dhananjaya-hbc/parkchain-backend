@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for controllers/NavigationController.js</title>
+    <title>Code coverage report for controllers/UserController.js</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../prettify.css" />
     <link rel="stylesheet" href="../base.css" />
@@ -19,20 +19,20 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../index.html">All files</a> / <a href="index.html">controllers</a> NavigationController.js</h1>
+        <h1><a href="../index.html">All files</a> / <a href="index.html">controllers</a> UserController.js</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/11</span>
+                <span class='fraction'>0/18</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/4</span>
+                <span class='fraction'>0/8</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/11</span>
+                <span class='fraction'>0/18</span>
             </div>
         
             
@@ -102,85 +102,88 @@
 <a name='L37'></a><a href='#L37'>37</a>
 <a name='L38'></a><a href='#L38'>38</a>
 <a name='L39'></a><a href='#L39'>39</a>
-<a name='L40'></a><a href='#L40'>40</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">const NavigationService = <span class="cstat-no" title="statement not covered" >require('../services/NavigationService');</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// src/controllers/UserController.js
+const User = <span class="cstat-no" title="statement not covered" >require('../models/User');</span>
 &nbsp;
-class NavigationController {
-<span class="fstat-no" title="function not covered" >  st</span>atic async getRoute(req, res) {
-<span class="cstat-no" title="statement not covered" >    try {</span>
-      // Extract mode from query (even if frontend sends "Bike" or "SUV")
-      const { origin, destination, mode } = <span class="cstat-no" title="statement not covered" >req.query;</span>
+const updateProfile = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >as</span>ync (req, res) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  try {</span>
+    const userId = <span class="cstat-no" title="statement not covered" >req.user.id;</span>
+<span class="cstat-no" title="statement not covered" >    console.log('--- Incoming Profile Update ---');</span>
+<span class="cstat-no" title="statement not covered" >    console.log('Headers:', req.headers['content-type']);</span>
+<span class="cstat-no" title="statement not covered" >    console.log('Body:', req.body);</span>
+    
+    // Allow various keys from frontend
+    const name = <span class="cstat-no" title="statement not covered" >req.body.name !== undefined ? req.body.name : req.body.fullName;</span>
+    const licensePlate = <span class="cstat-no" title="statement not covered" >req.body.licensePlate !== undefined ? req.body.licensePlate : req.body.license_no;</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (!origin || !destination) {</span>
-<span class="cstat-no" title="statement not covered" >        return res.status(400).json({ </span>
-          success: false, 
-          message: 'Both origin and destination coordinates are required. Format: lat,lng' 
-        });
-      }
+<span class="cstat-no" title="statement not covered" >    console.log(`Parsed mapped data -&gt; userId: ${userId}, name: ${name}, licensePlate: ${licensePlate}`);</span>
 &nbsp;
-      // Since the app only supports "Bike" (Motorcycle) and "SUV/Car",
-      // both MUST use the Google Maps "driving" mode because they both use standard roads.
-      // Google's "bicycling" mode is for pedal bicycles and uses bike paths!
-      const googleMode = <span class="cstat-no" title="statement not covered" >'driving'; </span>
+    // Only update allowed fields
+    const updatedUser = <span class="cstat-no" title="statement not covered" >await User.updateProfile(userId, { </span>
+      name, 
+      licensePlate 
+    });
 &nbsp;
-      // Pass the forced 'driving' mode parameter to the service
-      const routeData = <span class="cstat-no" title="statement not covered" >await NavigationService.getDirections(origin, destination, googleMode);</span>
+<span class="cstat-no" title="statement not covered" >    console.log('Updated user DB response:', updatedUser ? 'Success' : 'Not found');</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      res.status(200).json({</span>
-        success: true,
-        data: routeData
-      });
-      
-    } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('NavigationController getRoute error:', error);</span>
-<span class="cstat-no" title="statement not covered" >      res.status(500).json({ </span>
-        success: false, 
-        message: 'Failed to fetch navigation route',
-        error: error.message 
-      });
+<span class="cstat-no" title="statement not covered" >    if (!updatedUser) {</span>
+<span class="cstat-no" title="statement not covered" >      return res.status(404).json({ error: 'User not found' });</span>
     }
-  }
-}
 &nbsp;
-<span class="cstat-no" title="statement not covered" >module.exports = NavigationController;</span></pre></td></tr></table></pre>
+<span class="cstat-no" title="statement not covered" >    res.status(200).json({</span>
+      message: 'Profile updated successfully',
+      user: updatedUser
+    });
+  } catch (error) {
+<span class="cstat-no" title="statement not covered" >    console.error('Update profile error:', error.message);</span>
+<span class="cstat-no" title="statement not covered" >    res.status(500).json({ error: 'Failed to update profile' });</span>
+  }
+};
+&nbsp;
+<span class="cstat-no" title="statement not covered" >module.exports = {</span>
+  updateProfile
+};</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
