@@ -17,7 +17,7 @@ const passwordChangeLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Xaman register/login for drivers and sellers
+// Xaman login for drivers and sellers
 router.post('/xaman', AuthController.xamanLogin);
 
 // Admin login with email + password
