@@ -15,8 +15,8 @@ const startServer = async () => {
     const result = await pool.query('SELECT NOW()');
 
     // If we reach this line, the connection worked!
-    console.log('✅ Database connected successfully!');
-    console.log('📅 Database time:', result.rows[0].now);
+    console.log('Database connected successfully!');
+    console.log('Database time:', result.rows[0].now);
 
     // Now start the Express server
     app.listen(PORT, () => {
@@ -25,7 +25,7 @@ const startServer = async () => {
 
   } catch (error) {
     // If database connection fails, show the error and stop
-    console.error('❌ Database connection failed!');
+    console.error('Database connection failed!');
     console.error('Error:', error.message);
     console.error('');
     console.error('Check these things:');

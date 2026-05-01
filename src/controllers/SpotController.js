@@ -327,7 +327,7 @@ const approveSpot = async (req, res) => {
       return res.status(404).json({ error: 'Spot not found.' });
     }
 
-    console.log(`✅ Spot approved: "${spot.title}"`);
+    console.log(`Spot approved: "${spot.title}"`);
 
     res.json({ message: 'Spot approved successfully.', spot });
 
@@ -347,7 +347,7 @@ const rejectSpot = async (req, res) => {
       return res.status(404).json({ error: 'Spot not found.' });
     }
 
-    console.log(`❌ Spot rejected: "${spot.title}"`);
+    console.log(`Spot rejected: "${spot.title}"`);
 
     res.json({ message: 'Spot rejected and removed.', spot });
 

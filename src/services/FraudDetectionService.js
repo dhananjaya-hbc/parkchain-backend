@@ -1,13 +1,4 @@
 // src/services/FraudDetectionService.js
-// ============================================
-// AI FRAUD DETECTION SERVICE
-// ============================================
-// Analyzes driver booking patterns to detect suspicious activity
-//
-// Risk Score: 0-100
-//   0-30:  LOW RISK    → Normal booking
-//   31-60: MEDIUM RISK → Some concerns
-//   61-100: HIGH RISK  → Suspicious activity
 
 const { query } = require('../config/db');
 
@@ -17,7 +8,7 @@ class FraudDetectionService {
   // MAIN: Analyze a booking for fraud
   // ============================================
   async analyzeBooking(driverId, spotId, startTime, endTime, totalAmountXrp) {
-    console.log(`\n🔍 AI Fraud Detection — Analyzing booking...`);
+    console.log(`\nFraud Detection — Analyzing booking...`);
 
     const warnings = [];
     let riskScore = 0;
@@ -55,8 +46,8 @@ class FraudDetectionService {
     if (riskScore > 60) riskLevel = 'high';
     else if (riskScore > 30) riskLevel = 'medium';
 
-    console.log(`🤖 Risk Score: ${riskScore}/100 (${riskLevel.toUpperCase()})`);
-    console.log(`   Warnings: ${warnings.length > 0 ? warnings.join(', ') : 'None'}`);
+    console.log(`Risk Score: ${riskScore}/100 (${riskLevel.toUpperCase()})`);
+    console.log(`Warnings: ${warnings.length > 0 ? warnings.join(', ') : 'None'}`);
 
     return {
       riskScore,
