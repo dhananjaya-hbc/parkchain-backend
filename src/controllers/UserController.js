@@ -97,9 +97,30 @@ const uploadProfileImage = async (req, res) => {
   }
 };
 
+const getUserById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Fetch the user from the database
+    const user = await User.findById(id);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Return the raw user object so the admin gets all details (wallet_address, etc)
+    res.status(200).json({ user: user });
+
+  } catch (error) {
+    console.error('Get user by id error:', error.message);
+    res.status(500).json({ error: 'Failed to get user details' });
+  }
+};
+
 module.exports = {
   updateProfile,
   getProfile,
   uploadProfileImage,
+  getUserById,
   buildProfileResponse
 };

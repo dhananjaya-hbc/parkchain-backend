@@ -1,7 +1,3 @@
-// src/controllers/UtilsController.js
-// ============================================
-// UTILS CONTROLLER
-// ============================================
 // Handles utility functions like map link conversions
 
 const convertMapLinkToCoords = async (req, res) => {
@@ -53,9 +49,7 @@ const convertMapLinkToCoords = async (req, res) => {
       });
     }
 
-    // If we couldn't parse coordinates from the URL, try using Google Maps API if you have it configured.
-    // In this case, since we don't have an address, Geocoding might be tricky if the URL doesn't contain coordinates.
-    // But most Google Maps URLs contain the coordinates after redirect.
+   
     return res.status(400).json({ 
       error: 'Could not extract coordinates from the provided link.',
       resolvedUrl: finalUrl

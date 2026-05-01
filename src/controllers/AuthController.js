@@ -29,7 +29,7 @@ const xamanLogin = async (req, res) => {
     let user = await User.findByWalletAddress(wallet_address);
 
     if (user) {
-      console.log(`🔑 Existing ${user.role} logged in via Xaman: ${user.wallet_address}`);
+      console.log(` Existing ${user.role} logged in via Xaman: ${user.wallet_address}`);
     } else {
       user = await User.createXamanUser({
         walletAddress: wallet_address,
@@ -45,7 +45,6 @@ const xamanLogin = async (req, res) => {
       token,
       user: {
         id: user.id,
-        email: user.email,
         name: user.name,
         role: user.role,
         wallet_address: user.wallet_address,
@@ -92,7 +91,7 @@ const adminLogin = async (req, res) => {
 
     const token = generateToken(admin.id, admin.role);
 
-    console.log(`👑 Admin logged in: ${admin.email}`);
+    console.log(` Admin logged in: ${admin.email}`);
 
     res.status(200).json({
       message: 'Admin login successful',

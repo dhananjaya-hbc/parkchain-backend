@@ -11,7 +11,6 @@ app.use(express.json());
 
 // --- ROUTES ---
 
-
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -57,6 +56,7 @@ app.use('/api/users', require('./routes/UserRoutes'));
 app.use('/api/auth/xumm', require('./routes/XummRoutes')); 
 app.use('/api/spots', require('./routes/SpotRoutes'));
 app.use('/api/bookings', require('./routes/BookingRoutes'));
+app.use('/api/bookings/check', require('./routes/BookingCheckRoutes'));
 app.use('/api/payments', require('./routes/PaymentRoutes'));
 app.use('/api/navigation', require('./routes/NavigationRoutes'));
 app.use('/api/utils', require('./routes/UtilsRoutes'));

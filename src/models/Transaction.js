@@ -1,10 +1,6 @@
 // src/models/Transaction.js
-// ============================================
-// TRANSACTION MODEL
-// ============================================
+
 // Records every XRPL blockchain transaction in our database
-// This gives us a local copy for fast queries
-// The blockchain is the source of truth (can verify anytime)
 
 const { query } = require('../config/db');
 
@@ -83,14 +79,12 @@ class Transaction {
     );
     return result.rows[0];
   }
-  // src/models/Transaction.js
 
-// Add this new method after getAdminEarnings()
 
   // Get transactions for a specific seller (only their spots)
-static async findBySellerId(sellerId, limit = 50, offset = 0) {
-  const result = await query(
-    `SELECT t.*, 
+  static async findBySellerId(sellerId, limit = 50, offset = 0) {
+    const result = await query(
+      `SELECT t.*, 
             b.spot_id,
             b.driver_id,
             s.title AS spot_title,
@@ -105,15 +99,15 @@ static async findBySellerId(sellerId, limit = 50, offset = 0) {
        AND t.status = 'validated'
      ORDER BY t.created_at DESC
      LIMIT $2 OFFSET $3`,
-    [sellerId, limit, offset]
-  );
-  return result.rows;
-}
+      [sellerId, limit, offset]
+    );
+    return result.rows;
+  }
 
-// Get seller earnings summary
-static async getSellerEarnings(sellerId) {
-  const result = await query(
-    `SELECT
+  // Get seller earnings summary
+  static async getSellerEarnings(sellerId) {
+    const result = await query(
+      `SELECT
        COUNT(*) AS total_transactions,
        COALESCE(SUM(amount_xrp), 0) AS total_earned_xrp
      FROM transactions t
@@ -122,14 +116,14 @@ static async getSellerEarnings(sellerId) {
      WHERE s.owner_id = $1
        AND t.tx_type = 'admin_to_seller'
        AND t.status = 'validated'`,
-    [sellerId]
-  );
-  return result.rows[0];
-}
+      [sellerId]
+    );
+    return result.rows[0];
+  }
 
-// Get seller earnings series for dashboard chart
-static async getSellerEarningsSeries(sellerId, period = 'week') {
-  const sellerTxCte = `WITH seller_tx AS (
+  // Get seller earnings series for dashboard chart
+  static async getSellerEarningsSeries(sellerId, period = 'week') {
+    const sellerTxCte = `WITH seller_tx AS (
     SELECT t.created_at, t.amount_xrp
     FROM transactions t
     JOIN bookings b ON t.booking_id = b.id
@@ -139,10 +133,10 @@ static async getSellerEarningsSeries(sellerId, period = 'week') {
       AND t.status = 'validated'
   )`;
 
-  const config = {
-    week: {
-      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-      sql: `${sellerTxCte},
+    const config = {
+      week: {
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        sql: `${sellerTxCte},
         days AS (
           SELECT generate_series(
             date_trunc('week', NOW()),
@@ -157,10 +151,10 @@ static async getSellerEarningsSeries(sellerId, period = 'week') {
          AND st.created_at < d.bucket_start + INTERVAL '1 day'
         GROUP BY d.bucket_start
         ORDER BY d.bucket_start`,
-    },
-    month: {
-      labels: ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4'],
-      sql: `${sellerTxCte},
+      },
+      month: {
+        labels: ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4'],
+        sql: `${sellerTxCte},
         weeks AS (
           SELECT generate_series(
             date_trunc('week', NOW()) - INTERVAL '3 week',
@@ -175,10 +169,10 @@ static async getSellerEarningsSeries(sellerId, period = 'week') {
          AND st.created_at < w.bucket_start + INTERVAL '1 week'
         GROUP BY w.bucket_start
         ORDER BY w.bucket_start`,
-    },
-    year: {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-      sql: `${sellerTxCte},
+      },
+      year: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        sql: `${sellerTxCte},
         months AS (
           SELECT generate_series(1, 12) AS month_no
         )
@@ -189,17 +183,17 @@ static async getSellerEarningsSeries(sellerId, period = 'week') {
          AND EXTRACT(YEAR FROM st.created_at) = EXTRACT(YEAR FROM NOW())
         GROUP BY m.month_no
         ORDER BY m.month_no`,
-    },
-  };
+      },
+    };
 
-  const selected = config[period] || config.year;
-  const result = await query(selected.sql, [sellerId]);
+    const selected = config[period] || config.year;
+    const result = await query(selected.sql, [sellerId]);
 
-  return {
-    labels: selected.labels,
-    values: result.rows.map((row) => Number(row.total)),
-  };
-}
+    return {
+      labels: selected.labels,
+      values: result.rows.map((row) => Number(row.total)),
+    };
+  }
 }
 
 module.exports = Transaction;
