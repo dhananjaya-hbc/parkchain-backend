@@ -122,7 +122,8 @@ describe('NavigationController', () => {
             expect(NavigationService.getDirections).toHaveBeenCalledWith(
                 '6.9271,79.8612',
                 '6.9350,79.8500',
-                'driving' // Must enforce driving regardless of 'Bike'
+                'driving', // Must enforce driving regardless of 'Bike'
+                true // avoidHighways should be true for 'Bike'
             );
         });
 
@@ -141,7 +142,8 @@ describe('NavigationController', () => {
             expect(NavigationService.getDirections).toHaveBeenCalledWith(
                 '6.9271,79.8612',
                 '6.9350,79.8500',
-                'driving'
+                'driving',
+                false
             );
         });
 
