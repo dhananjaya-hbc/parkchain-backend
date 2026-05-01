@@ -1,9 +1,5 @@
 // src/services/XrplService.js
 
-//   1. Driver pays Admin via Xaman App
-//   2. Backend VERIFIES the transaction hash
-//   3. Backend PAYS Seller (80%) using Admin's seed
-
 const xrpl = require('xrpl');
 require('dotenv').config();
 

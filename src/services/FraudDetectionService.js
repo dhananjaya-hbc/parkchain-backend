@@ -1,11 +1,5 @@
 // src/services/FraudDetectionService.js
 
-// Analyzes driver booking patterns to detect suspicious activity
-// Risk Score: 0-100
-//   0-30:  LOW RISK    → Normal booking
-//   31-60: MEDIUM RISK → Some concerns
-//   61-100: HIGH RISK  → Suspicious activity
-
 const { query } = require('../config/db');
 
 class FraudDetectionService {
