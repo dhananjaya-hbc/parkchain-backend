@@ -15,8 +15,6 @@ router.get('/availability/:spotId', BookingController.getSpotAvailability);
 router.post('/', roleMiddleware('driver'), BookingController.createBooking);
 router.get('/', BookingController.getBookings);
 router.get('/:id', BookingController.getBookingById);
-router.put('/:id/checkin', roleMiddleware('driver'), BookingController.checkIn);
-router.put('/:id/checkout', roleMiddleware('driver'), BookingController.checkOut);
 router.put('/:id/cancel', BookingController.cancelBooking);
 router.get('/:id/fraud-check', BookingController.fraudCheck);
 
