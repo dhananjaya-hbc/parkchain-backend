@@ -28,11 +28,22 @@ const spotStorage = new CloudinaryStorage({
   }
 });
 
+const profileStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'profile_images',
+    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+    resource_type: 'image'
+  }
+});
+
 const upload = multer({ storage: kybStorage });
 const spotUpload = multer({ storage: spotStorage });
+const profileUpload = multer({ storage: profileStorage });
 
 module.exports = {
   cloudinary,
   upload,
-  spotUpload
+  spotUpload,
+  profileUpload
 };

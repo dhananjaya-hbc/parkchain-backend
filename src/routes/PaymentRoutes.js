@@ -1,18 +1,4 @@
 // src/routes/PaymentRoutes.js
-// ============================================
-// PAYMENT / XRPL ROUTES (Xaman-only)
-// ============================================
-//
-// Payment processing is now handled via XummRoutes.js:
-//   POST /api/auth/xumm/create-payment  → Driver signs in Xaman app
-//   POST /api/auth/xumm/verify-payment  → Backend verifies & splits 80/20
-//
-// This file handles:
-//   GET    /api/payments/balance               → Get user's XRP balance
-//   GET    /api/payments/transactions          → Transaction history (ADMIN)
-//   GET    /api/payments/seller/transactions   → Seller's transaction history
-//   GET    /api/payments/verify/:txHash        → Verify TX on blockchain
-//   GET    /api/payments/admin/balance         → Admin wallet + earnings
 
 const router = require('express').Router();
 const PaymentController = require('../controllers/PaymentController');

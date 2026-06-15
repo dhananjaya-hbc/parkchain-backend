@@ -9,7 +9,7 @@ class User {
   static async findById(id) {
     const result = await query(
       `SELECT id, email, name, phone, role, wallet_address,
-              profile_image, kyc_status, created_at, auth_type, license_no
+              profile_image, kyc_status, status, created_at, auth_type, license_no, vehicle_type
        FROM users WHERE id = $1`,
       [id]
     );
@@ -53,7 +53,7 @@ class User {
     const result = await query(
       `INSERT INTO users (email, name, role, wallet_address, auth_type)
        VALUES ($1, $2, $3, $4, 'xaman')
-       RETURNING id, email, name, phone, role, wallet_address, kyc_status, created_at, auth_type, license_no`,
+       RETURNING id, email, name, phone, role, wallet_address, kyc_status, status, created_at, auth_type, license_no, vehicle_type`,
       [mockEmail, mockName, role, walletAddress]
     );
     return result.rows[0];
@@ -73,22 +73,24 @@ class User {
   // UPDATE methods
   // ============================================
 
-  static async updateProfile(id, { name, phone, profileImage, licensePlate }) {
+  static async updateProfile(id, { name, phone, profileImage, licenseNo, vehicleType }) {
     const result = await query(
       `UPDATE users
        SET name = COALESCE($1, name),
            phone = COALESCE($2, phone),
            profile_image = COALESCE($3, profile_image),
-           license_no = COALESCE($4, license_no),
+           license_no = COALESCE($5, license_no),
+           vehicle_type = COALESCE($6, vehicle_type),
            updated_at = NOW()
-       WHERE id = $5
-       RETURNING id, email, name, phone, role, wallet_address, profile_image, kyc_status, created_at, auth_type, license_no`,
+       WHERE id = $4
+       RETURNING id, email, name, phone, role, wallet_address, profile_image, kyc_status, status, created_at, auth_type, license_no, vehicle_type`,
       [
         name !== undefined ? name : null, 
         phone !== undefined ? phone : null, 
         profileImage !== undefined ? profileImage : null, 
-        licensePlate !== undefined ? licensePlate : null, 
-        id
+        id,
+        licenseNo !== undefined ? licenseNo : null,
+        vehicleType !== undefined ? vehicleType : null
       ]
     );
     return result.rows[0] || null;
@@ -110,7 +112,7 @@ class User {
   // WALLET methods
   // ============================================
 
-  // Only returns wallet_address (no seed — Xaman users manage their own keys)
+  // Only returns wallet_address 
   static async getWalletAddress(id) {
     const result = await query(
       'SELECT wallet_address FROM users WHERE id = $1',
@@ -125,7 +127,7 @@ class User {
 
   static async findAll(role = null) {
     let sql = `SELECT id, email, name, phone, role, wallet_address,
-                      kyc_status, created_at, auth_type FROM users`;
+                      kyc_status, status, created_at, auth_type, license_no, vehicle_type FROM users`;
     const params = [];
 
     if (role) {
@@ -136,6 +138,59 @@ class User {
     sql += ' ORDER BY created_at DESC';
     const result = await query(sql, params);
     return result.rows;
+  }
+
+  static async getSellersWithStats() {
+    const sql = `
+      SELECT 
+        u.id, 
+        u.name, 
+        u.email, 
+        u.phone, 
+        u.profile_image,
+        u.created_at,
+        u.kyc_status,
+        u.status,
+        COUNT(s.id)::int AS "totalSpots"
+      FROM users u
+      LEFT JOIN spots s ON u.id = s.owner_id
+      WHERE u.role = 'seller'
+      GROUP BY u.id
+      ORDER BY u.created_at DESC
+    `;
+    const result = await query(sql);
+    
+    return result.rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      phone: row.phone,
+      totalSpots: row.totalSpots,
+      joinedDate: row.created_at ? row.created_at.toISOString() : null,
+      status: row.status, // Uses the status column
+      image: row.profile_image
+    }));
+  }
+
+  static async updateStatus(id, status) {
+    const result = await query(
+      `UPDATE users
+       SET status = $1, updated_at = NOW()
+       WHERE id = $2
+       RETURNING id, name, role, status`,
+      [status, id]
+    );
+    return result.rows[0] || null;
+  }
+
+  static async remove(id) {
+    const result = await query(
+      `DELETE FROM users
+       WHERE id = $1
+       RETURNING id`,
+      [id]
+    );
+    return result.rows[0] || null;
   }
 
   static async verifySeller(sellerId) {
@@ -153,13 +208,6 @@ class User {
     const result = await query(
       'SELECT * FROM users WHERE email = $1 AND role = $2',
       [email, 'admin']
-    );
-    return result.rows[0] || null;
-  }
-
-  static async getAdminUser() {
-    const result = await query(
-      `SELECT id FROM users WHERE role = 'admin' ORDER BY created_at ASC LIMIT 1`
     );
     return result.rows[0] || null;
   }

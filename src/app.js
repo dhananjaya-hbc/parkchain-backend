@@ -11,7 +11,6 @@ app.use(express.json());
 
 // --- ROUTES ---
 
-
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -76,6 +75,27 @@ app.use('/api/notifications', require('./routes/NotificationRoutes'));
 // Reviews Routes
 app.use('/api/reviews', require('./routes/ReviewRoutes'));
 
+// API Routes
+app.use('/api/auth', require('./routes/AuthRoutes'));
+app.use('/api/users', require('./routes/UserRoutes'));
+app.use('/api/auth/xumm', require('./routes/XummRoutes')); 
+app.use('/api/spots', require('./routes/SpotRoutes'));
+app.use('/api/bookings', require('./routes/BookingRoutes'));
+app.use('/api/bookings/check', require('./routes/BookingCheckRoutes'));
+app.use('/api/payments', require('./routes/PaymentRoutes'));
+app.use('/api/navigation', require('./routes/NavigationRoutes'));
+app.use('/api/utils', require('./routes/UtilsRoutes'));
+
+// KYC / Didit Webhooks Routes
+app.use('/api', require('./routes/KycRoutes'));
+app.use('/api/kyb', require('./routes/KybRoutes'));
+
+// Admin Dashboard Routes
+app.use('/api/admin/kyb', require('./routes/AdminKybRoutes'));
+
+// Seller Dashboard Routes
+app.use('/api/seller/kyb', require('./routes/SellerKybRoutes'));
+
 app.get('/', (req, res) => {
   res.json({
     message: 'Parking Payment API',
@@ -84,7 +104,8 @@ app.get('/', (req, res) => {
       spots: '/api/spots',
       bookings: '/api/bookings',
       payments: '/api/payments',
-      navigation: '/api/navigation'
+      navigation: '/api/navigation',
+      utils: '/api/utils'
     }
   });
 });

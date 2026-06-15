@@ -15,11 +15,15 @@ class NavigationController {
 
       // Since the app only supports "Bike" (Motorcycle) and "SUV/Car",
       // both MUST use the Google Maps "driving" mode because they both use standard roads.
-      // Google's "bicycling" mode is for pedal bicycles and uses bike paths!
-      const googleMode = 'driving'; 
+      const googleMode = mode === 'Bike' ? 'driving' : 'driving'; 
+      const avoidHighways = mode === 'Bike'; // Bikes should avoid expressways
 
-      // Pass the forced 'driving' mode parameter to the service
-      const routeData = await NavigationService.getDirections(origin, destination, googleMode);
+      const routeData = await NavigationService.getDirections(
+        origin, 
+        destination, 
+        googleMode,
+        avoidHighways
+      );
 
       res.status(200).json({
         success: true,

@@ -1,7 +1,4 @@
 const KybSubmission = require('../models/KybSubmission');
-const User = require('../models/User');
-const { EVENTS, fireEvent } = require('../events/notificationEvents');
-const {FcmToken} = require('../models/FcmToken');
 class KybController {
   /**
    * POST /api/kyb
@@ -33,9 +30,6 @@ class KybController {
         spotType,
         documentUrl
       });
-      //Send notification to admin about new KYB submission
-      const admin = await User.getAdminUser();
-      await fireEvent(EVENTS.NEW_KYB_REQUEST, admin.id, { businessName: entityName });
 
       return res.status(201).json({
         message: 'KYB submission successful.',

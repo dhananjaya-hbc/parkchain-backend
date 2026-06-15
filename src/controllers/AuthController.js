@@ -2,6 +2,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const { buildProfileResponse } = require('./UserController');
 require('dotenv').config();
 
 const generateToken = (userId, role) => {
@@ -28,7 +29,7 @@ const xamanLogin = async (req, res) => {
     let user = await User.findByWalletAddress(wallet_address);
 
     if (user) {
-      console.log(`🔑 Existing ${user.role} logged in via Xaman: ${user.wallet_address}`);
+      console.log(` Existing ${user.role} logged in via Xaman: ${user.wallet_address}`);
     } else {
       user = await User.createXamanUser({
         walletAddress: wallet_address,
@@ -44,13 +45,14 @@ const xamanLogin = async (req, res) => {
       token,
       user: {
         id: user.id,
-        email: user.email,
         name: user.name,
         role: user.role,
         wallet_address: user.wallet_address,
         profile_image: user.profile_image,
         auth_type: user.auth_type,
         kyc_status: user.kyc_status,
+        license_no: user.license_no,
+        vehicle_type: user.vehicle_type,
         created_at: user.created_at
       }
     });
@@ -89,7 +91,7 @@ const adminLogin = async (req, res) => {
 
     const token = generateToken(admin.id, admin.role);
 
-    console.log(`👑 Admin logged in: ${admin.email}`);
+    console.log(` Admin logged in: ${admin.email}`);
 
     res.status(200).json({
       message: 'Admin login successful',
@@ -168,20 +170,7 @@ const getMe = async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Determine profile completion status (only required for drivers)
-    // If the user name starts with 'Xaman User', they haven't explicitly set a name
-    const hasSetName = user.name && !user.name.startsWith('Xaman User');
-    const hasLicensePlate = !!user.license_no;
-    
-    const isProfileComplete = user.role === 'driver' 
-      ? (hasSetName && hasLicensePlate)
-      : true; // for sellers/admins, we might not require this step natively here yet
-
-    res.json({
-      user,
-      authType: req.authType,
-      isProfileComplete
-    });
+    res.status(200).json(buildProfileResponse(user));
   } catch (error) {
     res.status(500).json({ error: 'Failed to get user info.' });
   }

@@ -32,10 +32,12 @@ CREATE TABLE IF NOT EXISTS users (
     wallet_address VARCHAR(60),
     
     license_no VARCHAR(255),
+    vehicle_type VARCHAR(50),
     
     profile_image TEXT,
     kyc_session_id VARCHAR(255),
     kyc_status VARCHAR(50) DEFAULT 'unverified',
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'suspended')),
     auth_type VARCHAR(20) DEFAULT 'xaman',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
