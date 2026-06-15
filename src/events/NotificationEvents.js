@@ -7,7 +7,8 @@ const { sendMulticast } = require("../services/FirebaseService");
 
 const EVENTS = {
   // Booking
-  BOOKING_CONFIRMED: "BOOKING_CONFIRMED",
+  BOOKING_CONFIRMED: "BOOKING_CONFIRMED_DRIVER",
+  BOOKING_CONFIRMED: "BOOKING_CONFIRMED_OWNER",
   BOOKING_CANCELLED: "BOOKING_CANCELLED",
   BOOKING_STARTED: "BOOKING_STARTED",
   BOOKING_ENDED: "BOOKING_ENDED",
@@ -28,6 +29,8 @@ const EVENTS = {
   KYB_REJECTED: "KYB_REJECTED",
 
   // Spots
+  SPOT_APPROVED: "SPOT_APPROVED",
+  SPOT_REJECTED: "SPOT_REJECTED",
   SPOT_AVAILABLE: "SPOT_AVAILABLE",
   SPOT_UNAVAILABLE: "SPOT_UNAVAILABLE",
 };
@@ -39,9 +42,21 @@ const templates = {
     title: "New KYB Submission 🏢",
     body: `${d.businessName} has submitted a KYB application. Review needed.`,
   }),
-  [EVENTS.BOOKING_CONFIRMED]: (d) => ({
+  [EVENTS.BOOKING_CONFIRMED_DRIVER]: (d) => ({
     title: "Booking Confirmed ✅",
     body: `Your booking for ${d.spotName} on ${d.date} is confirmed.`,
+  }),
+  [EVENTS.BOOKING_CONFIRMED_OWNER]: (d) => ({
+    title: "Booking Confirmed ✅",
+    body: `Your ${d.spotName} have a new booking on ${d.date} booked.`,
+  }),
+  [EVENTS.SPOT_APPROVED]: (d) => ({
+    title: "Spot Approved ✅",
+    body: `Your spot "${d.spotName}" has been approved and is now live.`,
+  }),
+  [EVENTS.SPOT_REJECTED]: (d) => ({
+    title: "Spot Rejected",
+    body: `Your spot "${d.spotName}" has been rejected.`,
   }),
   [EVENTS.BOOKING_CANCELLED]: (d) => ({
     title: "Booking Cancelled",
@@ -101,6 +116,32 @@ const templates = {
   }),
 };
 
+// ─── Save notification to database ──────────────────────────────────────────
+
+/**
+ * Save a notification to the user_notifications table.
+ *
+ * @param {string} userId  - The recipient's user ID
+ * @param {string} title   - Notification title
+ * @param {string} body    - Notification body
+ * @param {object} data    - Extra payload (event, metadata, etc.)
+ */
+const saveNotificationToDb = async (userId, title, body, data = {}) => {
+  try {
+    await db.query(
+      `INSERT INTO user_notifications (user_id, title, body, data)
+       VALUES ($1, $2, $3, $4)`,
+      [userId, title, body, JSON.stringify(data)],
+    );
+    console.log(`[Notifications] Saved notification for user ${userId}`);
+  } catch (err) {
+    console.error(
+      `[Notifications] Failed to save notification to DB:`,
+      err.message,
+    );
+  }
+};
+
 // ─── Core fire function ──────────────────────────────────────────────────────
 
 /**
@@ -133,16 +174,25 @@ const fireEvent = async (eventName, userId, data = {}) => {
       [userId],
     );
 
+    const { title, body } = template(data);
+
+    // Save notification to database regardless of FCM tokens
+    await saveNotificationToDb(userId, title, body, {
+      event: eventName,
+      userId,
+      ...data,
+    });
+
     if (!rows.length) {
       console.log(`[Notifications] No active tokens for user ${userId}`);
       return;
     }
 
-    const { title, body } = template(data);
     const fcmTokens = rows.map((r) => r.fcm_token);
-
+    console.log(`[FCM] User ${userId} with tokens:`, fcmTokens);
     await sendMulticast(fcmTokens, title, body, {
       event: eventName,
+      userId,
       ...data,
     });
   } catch (err) {
@@ -153,4 +203,4 @@ const fireEvent = async (eventName, userId, data = {}) => {
   }
 };
 
-module.exports = { EVENTS, fireEvent };
+module.exports = { EVENTS, fireEvent, saveNotificationToDb };

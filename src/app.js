@@ -6,7 +6,7 @@ const { query } = require('./config/db');
 const app = express();
 
 // --- MIDDLEWARE ---
-app.use(cors());
+app.use(cors( ));
 app.use(express.json());
 
 // --- ROUTES ---
@@ -72,6 +72,9 @@ app.use('/api/seller/kyb', require('./routes/SellerKybRoutes'));
 
 // Notifications Routes
 app.use('/api/notifications', require('./routes/NotificationRoutes'));
+
+// Reviews Routes
+app.use('/api/reviews', require('./routes/ReviewRoutes'));
 
 app.get('/', (req, res) => {
   res.json({

@@ -1,6 +1,7 @@
 const KybSubmission = require('../models/KybSubmission');
 const User = require('../models/User');
 const { query } = require('../config/db');
+const { fireEvent , EVENTS } = require('../events/notificationEvents');
 
 class AdminKybController {
   /**
@@ -100,6 +101,13 @@ class AdminKybController {
           `UPDATE spots SET is_approved = true, is_available = true WHERE owner_id = $1`,
           [submission.owner_id]
         );
+        await fireEvent(EVENTS.KYB_APPROVED, submission.owner_id, {
+          businessName: submission.entity_name,
+        });
+      }else if (INTERNAL_STATUS === 'rejected') {
+        await fireEvent(EVENTS.KYB_REJECTED, submission.owner_id, {
+          businessName: submission.entity_name,
+        });
       }
 
       return res.status(200).json({

@@ -2,7 +2,7 @@
 // ============================================
 // BOOKING CONTROLLER
 // ============================================
-
+const { EVENTS, fireEvent } = require('../events/NotificationEvents');
 const Booking = require('../models/Booking');
 const Spot = require('../models/Spot');
 const FraudDetectionService = require('../services/FraudDetectionService');
@@ -123,7 +123,6 @@ const createBooking = async (req, res) => {
       sellerAmountXrp,
       vehicleNumber
     });
-
     res.status(201).json({
       message: 'Booking created. Proceed to payment.',
       booking,
@@ -142,6 +141,17 @@ const createBooking = async (req, res) => {
         bookedSlots: overlappingCount,
         remainingSlots: slotsForThisType - overlappingCount
       }
+    });
+    // Send notifications to owner and driver about new booking
+    // to owner
+    await fireEvent(EVENTS.BOOKING_CONFIRMED_OWNER, booking.ownerId, {
+      spotName: spot.title,
+      date:booking.start_time.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }),
+    });
+    //to driver
+    await fireEvent(EVENTS.BOOKING_CONFIRMED_DRIVER, booking.driverId, {
+      spotName: spot.title,
+      date:booking.start_time.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }),
     });
 
   } catch (error) {

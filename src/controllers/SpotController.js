@@ -7,6 +7,7 @@
 const Spot = require('../models/Spot');
 const KybSubmission = require('../models/KybSubmission');
 const { query } = require('../config/db');
+const { fireEvent , EVENTS } = require('../events/notificationEvents');
 
 // ============================================
 // POST /api/spots — Create a new spot (seller only)
@@ -331,6 +332,11 @@ const approveSpot = async (req, res) => {
 
     res.json({ message: 'Spot approved successfully.', spot });
 
+    await fireEvent(EVENTS.SPOT_APPROVED, spot.owner_id, {
+      spotName: spot.title,
+    });
+    console.log(`Notification event fired for spot approval: "${spot.title}"`);
+
   } catch (error) {
     res.status(500).json({ error: 'Failed to approve spot.' });
   }
@@ -350,7 +356,10 @@ const rejectSpot = async (req, res) => {
     console.log(`❌ Spot rejected: "${spot.title}"`);
 
     res.json({ message: 'Spot rejected and removed.', spot });
-
+    await fireEvent(EVENTS.SPOT_REJECTED, spot.owner_id, {
+      spotName: spot.title,
+    });
+    console.log(`Notification event fired for spot rejection: "${spot.title}"`);
   } catch (error) {
     res.status(500).json({ error: 'Failed to reject spot.' });
   }
