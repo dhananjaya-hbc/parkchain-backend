@@ -2,6 +2,17 @@
 const { query } = require('../config/db');
 
 class User {
+  static isProfileCompleted(user) {
+    if (!user) return false;
+    return !!(
+      user.name &&
+      user.phone &&
+      user.email &&
+      !user.email.endsWith('@xaman.local') &&
+      !user.name.startsWith('Xaman User')
+    );
+  }
+
   // ============================================
   // FIND methods
   // ============================================
@@ -73,12 +84,13 @@ class User {
   // UPDATE methods
   // ============================================
 
-  static async updateProfile(id, { name, phone, profileImage, licenseNo, vehicleType }) {
+  static async updateProfile(id, { name, email, phone, profileImage, licenseNo, vehicleType }) {
     const result = await query(
       `UPDATE users
        SET name = COALESCE($1, name),
            phone = COALESCE($2, phone),
            profile_image = COALESCE($3, profile_image),
+           email = COALESCE($7, email),
            license_no = COALESCE($5, license_no),
            vehicle_type = COALESCE($6, vehicle_type),
            updated_at = NOW()
@@ -90,7 +102,8 @@ class User {
         profileImage !== undefined ? profileImage : null, 
         id,
         licenseNo !== undefined ? licenseNo : null,
-        vehicleType !== undefined ? vehicleType : null
+        vehicleType !== undefined ? vehicleType : null,
+        email !== undefined ? email : null
       ]
     );
     return result.rows[0] || null;

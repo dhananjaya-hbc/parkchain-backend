@@ -132,13 +132,13 @@ describe('User Model', () => {
       const mockUpdatedUser = { id: 'user-1', name: 'Updated Name' };
       query.mockResolvedValueOnce({ rows: [mockUpdatedUser] });
 
-      const updates = { name: 'Updated Name', phone: '123', profileImage: 'img.png', licenseNo: 'L-123', vehicleType: 'Car' };
+      const updates = { name: 'Updated Name', email: 'updated@test.com', phone: '123', profileImage: 'img.png', licenseNo: 'L-123', vehicleType: 'Car' };
       const result = await User.updateProfile('user-1', updates);
 
       expect(result).toEqual(mockUpdatedUser);
       expect(query).toHaveBeenCalledWith(
         expect.any(String),
-        ['Updated Name', '123', 'img.png', 'user-1', 'L-123', 'Car']
+        ['Updated Name', '123', 'img.png', 'user-1', 'L-123', 'Car', 'updated@test.com']
       );
     });
 
@@ -150,7 +150,7 @@ describe('User Model', () => {
 
       expect(query).toHaveBeenCalledWith(
         expect.any(String),
-        [null, null, null, 'user-1', null, null]
+        [null, null, null, 'user-1', null, null, null]
       );
     });
 
@@ -276,6 +276,34 @@ describe('User Model', () => {
       query.mockResolvedValueOnce({ rows: [] });
       const result = await User.adminExists('unknown@test.com');
       expect(result).toBe(false);
+    });
+  });
+
+  describe('isProfileCompleted()', () => {
+    it('should return false if user is null or undefined', () => {
+      expect(User.isProfileCompleted(null)).toBe(false);
+      expect(User.isProfileCompleted(undefined)).toBe(false);
+    });
+
+    it('should return false if email ends with @xaman.local', () => {
+      const user = { name: 'John Doe', phone: '1234567890', email: 'test@xaman.local' };
+      expect(User.isProfileCompleted(user)).toBe(false);
+    });
+
+    it('should return false if name starts with Xaman User', () => {
+      const user = { name: 'Xaman User 12345', phone: '1234567890', email: 'test@gmail.com' };
+      expect(User.isProfileCompleted(user)).toBe(false);
+    });
+
+    it('should return false if name, phone or email is missing', () => {
+      expect(User.isProfileCompleted({ name: 'John Doe', email: 'test@gmail.com' })).toBe(false);
+      expect(User.isProfileCompleted({ phone: '1234567890', email: 'test@gmail.com' })).toBe(false);
+      expect(User.isProfileCompleted({ name: 'John Doe', phone: '1234567890' })).toBe(false);
+    });
+
+    it('should return true if name, phone, and non-mock email are provided', () => {
+      const user = { name: 'John Doe', phone: '1234567890', email: 'test@gmail.com' };
+      expect(User.isProfileCompleted(user)).toBe(true);
     });
   });
 
