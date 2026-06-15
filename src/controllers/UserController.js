@@ -5,9 +5,11 @@ const buildProfileResponse = (user) => {
   const data = {
     userId: user.id,
     fullName: user.name || null,
+    email: user.email || null,
     phoneNumber: user.phone || null,
     licenseNo: user.license_no || null,
-    profileImageUrl: user.profile_image || null
+    profileImageUrl: user.profile_image || null,
+    profileCompleted: User.isProfileCompleted(user)
   };
 
   if (user.vehicle_type) {
@@ -31,14 +33,16 @@ const updateProfile = async (req, res) => {
     // Allow various keys from frontend
     const name = req.body.name !== undefined ? req.body.name : req.body.fullName;
     const phone = req.body.phone !== undefined ? req.body.phone : req.body.phoneNumber;
+    const email = req.body.email;
     const licenseNo = getCanonicalLicenseNo(req.body);
     const vehicleType = req.body.vehicle_type || req.body.vehicleType;
 
-    console.log(`Parsed mapped data -> userId: ${userId}, name: ${name}, phone: ${phone}, licenseNo: ${licenseNo}, vehicleType: ${vehicleType}`);
+    console.log(`Parsed mapped data -> userId: ${userId}, name: ${name}, email: ${email}, phone: ${phone}, licenseNo: ${licenseNo}, vehicleType: ${vehicleType}`);
 
     // Only update allowed fields
     const updatedUser = await User.updateProfile(userId, { 
       name, 
+      email,
       phone,
       licenseNo,
       vehicleType

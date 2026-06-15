@@ -46,6 +46,7 @@ const xamanLogin = async (req, res) => {
       user: {
         id: user.id,
         name: user.name,
+        email: user.email,
         role: user.role,
         wallet_address: user.wallet_address,
         profile_image: user.profile_image,
@@ -53,7 +54,8 @@ const xamanLogin = async (req, res) => {
         kyc_status: user.kyc_status,
         license_no: user.license_no,
         vehicle_type: user.vehicle_type,
-        created_at: user.created_at
+        created_at: user.created_at,
+        profileCompleted: User.isProfileCompleted(user)
       }
     });
   } catch (error) {
