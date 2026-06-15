@@ -50,7 +50,7 @@ const sendNotification = async (fcmToken, title, body, data = {}) => {
       [fcmToken]
     );
 
-    console.log(`[FCM] Sent successfully:`, response);
+    console.log(`[FCM] Sent successfullyyyyy:`, response);
     return response;
   } catch (err) {
     if (
