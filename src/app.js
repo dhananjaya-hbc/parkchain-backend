@@ -6,15 +6,36 @@ const { query } = require('./config/db');
 const app = express();
 
 // --- MIDDLEWARE ---
+
+// ✅ Handle preflight OPTIONS requests first
+app.options('*', cors());
+
 app.use(cors({
-  origin: ['https://park-chain-web.vercel.app/', 'http://localhost:3000'], // Allow production and local dev
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      'https://park-chain-k8rgfu13k-dhanas-projects-3283d047.vercel.app', // Current frontend
+      'https://park-chain-web.vercel.app',                                 // Production frontend (no trailing slash)
+      'http://localhost:3000',                                              // Local dev
+    ];
+
+    // Allow requests with no origin (mobile apps, Postman, curl)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    console.log('❌ CORS blocked origin:', origin);
+    return callback(new Error(`CORS policy: Origin ${origin} not allowed`));
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], // ✅ Added PATCH and OPTIONS
+  allowedHeaders: ['Content-Type', 'Authorization'],              // ✅ Allow auth headers
+  credentials: true,
 }));
+
 app.use(express.json());
 
 // --- ROUTES ---
-
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -57,7 +78,7 @@ app.get('/health/db', async (req, res) => {
 // API Routes
 app.use('/api/auth', require('./routes/AuthRoutes'));
 app.use('/api/users', require('./routes/UserRoutes'));
-app.use('/api/auth/xumm', require('./routes/XummRoutes')); 
+app.use('/api/auth/xumm', require('./routes/XummRoutes'));
 app.use('/api/spots', require('./routes/SpotRoutes'));
 app.use('/api/bookings', require('./routes/BookingRoutes'));
 app.use('/api/bookings/check', require('./routes/BookingCheckRoutes'));
