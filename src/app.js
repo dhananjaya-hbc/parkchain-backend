@@ -1,16 +1,17 @@
 // src/app.js
 const express = require('express');
-const cors = require('cors');
 const { query } = require('./config/db');
 
 const app = express();
 
 // ─────────────────────────────────────────────────────────
-// 1. CORS — must be FIRST, before everything else
+// 1. CORS — FIRST MIDDLEWARE
 // ─────────────────────────────────────────────────────────
 const allowedOrigins = [
   'https://park-chain-web.vercel.app',
   'https://park-chain-k8rgfu13k-dhanas-projects-3283d047.vercel.app',
+  // ⚠️ ADD YOUR ACTUAL FRONTEND URL BELOW:
+  // 'https://your-frontend-domain.vercel.app',
   'http://localhost:3000',
   'http://localhost:5173',
 ];
@@ -20,6 +21,7 @@ app.use((req, res, next) => {
 
   console.log(`[CORS] ${req.method} ${req.url} — origin: ${origin || 'none'}`);
 
+  // Always set CORS headers for known origins
   if (origin && allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
@@ -29,9 +31,9 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Vary', 'Origin');
 
-  // ✅ Handle preflight immediately — no other middleware runs
+  // Handle preflight immediately
   if (req.method === 'OPTIONS') {
-    console.log(`[CORS] Preflight handled for origin: ${origin}`);
+    console.log(`[CORS] Returning 204 for preflight`);
     return res.status(204).end();
   }
 
@@ -44,10 +46,13 @@ app.use((req, res, next) => {
 app.use(express.json());
 
 // ─────────────────────────────────────────────────────────
-// 3. HEALTH CHECKS
+// 3. ROOT / HEALTH
 // ─────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
-  res.json({ message: 'ParkChain API is running ✅' });
+  res.json({
+    message: 'ParkChain API is running',
+    timestamp: new Date().toISOString(),
+  });
 });
 
 app.get('/health', (req, res) => {
@@ -58,44 +63,14 @@ app.get('/health', (req, res) => {
   });
 });
 
-app.get('/health/db', async (req, res) => {
-  try {
-    const timeResult = await query('SELECT NOW() as current_time');
-    const tablesResult = await query(`
-      SELECT table_name
-      FROM information_schema.tables
-      WHERE table_schema = 'public'
-      ORDER BY table_name
-    `);
-
-    const tableDetails = [];
-    for (const row of tablesResult.rows) {
-      const countResult = await query(
-        `SELECT COUNT(*) as count FROM "${row.table_name}"`
-      );
-      tableDetails.push({
-        name: row.table_name,
-        rows: parseInt(countResult.rows[0].count),
-      });
-    }
-
-    res.json({
-      status: 'ok',
-      databaseTime: timeResult.rows[0].current_time,
-      tables: tableDetails,
-    });
-  } catch (error) {
-    console.error('DB health check error:', error);
-    res.status(500).json({ status: 'error', error: error.message });
-  }
-});
-
 // ─────────────────────────────────────────────────────────
-// 4. ADMIN LOGIN  (at /auth/admin/login)
+// 4. ADMIN LOGIN — with /api prefix to match frontend
 // ─────────────────────────────────────────────────────────
-app.post('/auth/admin/login', async (req, res) => {
+app.post('/api/auth/admin/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    console.log(`[ADMIN LOGIN] Attempt: ${email}`);
 
     if (!email || !password) {
       return res.status(400).json({
@@ -104,7 +79,7 @@ app.post('/auth/admin/login', async (req, res) => {
       });
     }
 
-    const adminEmail    = process.env.ADMIN_EMAIL;
+    const adminEmail = process.env.ADMIN_EMAIL;
     const adminPassword = process.env.ADMIN_PASSWORD;
 
     if (!adminEmail || !adminPassword) {
@@ -116,6 +91,7 @@ app.post('/auth/admin/login', async (req, res) => {
     }
 
     if (email === adminEmail && password === adminPassword) {
+      console.log(`[ADMIN LOGIN] ✅ Success for ${email}`);
       return res.json({
         success: true,
         message: 'Login successful',
@@ -124,6 +100,7 @@ app.post('/auth/admin/login', async (req, res) => {
       });
     }
 
+    console.log(`[ADMIN LOGIN] ❌ Invalid credentials for ${email}`);
     return res.status(401).json({
       success: false,
       message: 'Invalid credentials',
@@ -138,47 +115,54 @@ app.post('/auth/admin/login', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────
-// 5. NOTIFICATIONS  (at /notifications)
+// 5. NOTIFICATIONS
 // ─────────────────────────────────────────────────────────
-app.get('/notifications', (req, res) => {
+app.get('/api/notifications', (req, res) => {
   res.json({ success: true, notifications: [] });
 });
 
+app.post('/api/notifications/token', async (req, res) => {
+  const { fcm_token } = req.body;
+  if (!fcm_token) {
+    return res.status(400).json({ success: false, message: 'fcm_token required' });
+  }
+  console.log('FCM Token registered:', fcm_token);
+  res.json({ success: true, message: 'Token registered' });
+});
+
+app.delete('/api/notifications/token', async (req, res) => {
+  const { fcm_token } = req.body;
+  if (!fcm_token) {
+    return res.status(400).json({ success: false, message: 'fcm_token required' });
+  }
+  console.log('FCM Token removed:', fcm_token);
+  res.json({ success: true, message: 'Token removed' });
+});
+
 // ─────────────────────────────────────────────────────────
-// 6. API ROUTES  — registered ONCE, correct order
+// 6. API ROUTES (registered ONCE)
 // ─────────────────────────────────────────────────────────
-
-// xumm MUST come before /api/auth (more specific first)
-app.use('/api/auth/xumm',      require('./routes/XummRoutes'));
-app.use('/api/auth',           require('./routes/AuthRoutes'));
-
-app.use('/api/users',          require('./routes/UserRoutes'));
-app.use('/api/spots',          require('./routes/SpotRoutes'));
-
-// check MUST come before /api/bookings (more specific first)
+app.use('/api/auth/xumm', require('./routes/XummRoutes'));
+app.use('/api/auth', require('./routes/AuthRoutes'));
+app.use('/api/users', require('./routes/UserRoutes'));
+app.use('/api/spots', require('./routes/SpotRoutes'));
 app.use('/api/bookings/check', require('./routes/BookingCheckRoutes'));
-app.use('/api/bookings',       require('./routes/BookingRoutes'));
-
-app.use('/api/payments',       require('./routes/PaymentRoutes'));
-app.use('/api/navigation',     require('./routes/NavigationRoutes'));
-app.use('/api/notifications',  require('./routes/NotificationRoutes'));
-app.use('/api/reviews',        require('./routes/ReviewRoutes'));
-app.use('/api/utils',          require('./routes/UtilsRoutes'));
-
-// KYC / Didit webhooks
-app.use('/api/kyb',            require('./routes/KybRoutes'));
-app.use('/api',                require('./routes/KycRoutes'));
-
-// Admin
-app.use('/api/admin/kyb',      require('./routes/AdminKybRoutes'));
-
-// Seller
-app.use('/api/seller/kyb',     require('./routes/SellerKybRoutes'));
+app.use('/api/bookings', require('./routes/BookingRoutes'));
+app.use('/api/payments', require('./routes/PaymentRoutes'));
+app.use('/api/navigation', require('./routes/NavigationRoutes'));
+app.use('/api/notifications', require('./routes/NotificationRoutes'));
+app.use('/api/reviews', require('./routes/ReviewRoutes'));
+app.use('/api/utils', require('./routes/UtilsRoutes'));
+app.use('/api/kyb', require('./routes/KybRoutes'));
+app.use('/api', require('./routes/KycRoutes'));
+app.use('/api/admin/kyb', require('./routes/AdminKybRoutes'));
+app.use('/api/seller/kyb', require('./routes/SellerKybRoutes'));
 
 // ─────────────────────────────────────────────────────────
 // 7. 404 HANDLER
 // ─────────────────────────────────────────────────────────
 app.use((req, res) => {
+  console.log(`[404] ${req.method} ${req.url}`);
   res.status(404).json({ error: `Route ${req.method} ${req.url} not found` });
 });
 
