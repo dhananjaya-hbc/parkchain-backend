@@ -5,60 +5,49 @@ const { query } = require('./config/db');
 
 const app = express();
 
-// ─────────────────────────────────────────────
-// CORS
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────
+// 1. CORS — must be FIRST, before everything else
+// ─────────────────────────────────────────────────────────
 const allowedOrigins = [
-  'https://park-chain-k8rgfu13k-dhanas-projects-3283d047.vercel.app',
   'https://park-chain-web.vercel.app',
+  'https://park-chain-k8rgfu13k-dhanas-projects-3283d047.vercel.app',
   'http://localhost:3000',
+  'http://localhost:5173',
 ];
 
-const corsOptions = {
-  origin: function (origin, callback) {
-    // allow server-to-server requests (curl, Postman, internal) with no origin
-    if (!origin) return callback(null, true);
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
 
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
+  console.log(`[CORS] ${req.method} ${req.url} — origin: ${origin || 'none'}`);
 
-    // DON'T throw an Error — just reject cleanly
-    // Throwing causes a 500; rejecting causes a 403
-    console.warn('⚠️  CORS blocked origin:', origin);
-    return callback(null, false);
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-};
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
 
-// Handle preflight for ALL routes FIRST, with same corsOptions
-app.options('*', cors(corsOptions));
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Vary', 'Origin');
 
-// Apply CORS to all routes
-app.use(cors(corsOptions));
+  // ✅ Handle preflight immediately — no other middleware runs
+  if (req.method === 'OPTIONS') {
+    console.log(`[CORS] Preflight handled for origin: ${origin}`);
+    return res.status(204).end();
+  }
 
-// ─────────────────────────────────────────────
-// BODY PARSING
-// ─────────────────────────────────────────────
+  next();
+});
+
+// ─────────────────────────────────────────────────────────
+// 2. BODY PARSING
+// ─────────────────────────────────────────────────────────
 app.use(express.json());
 
-// ─────────────────────────────────────────────
-// HEALTH ROUTES
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────
+// 3. HEALTH CHECKS
+// ─────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
-  res.json({
-    message: 'ParkChain API',
-    routes: {
-      auth: '/api/auth',
-      spots: '/api/spots',
-      bookings: '/api/bookings',
-      payments: '/api/payments',
-      navigation: '/api/navigation',
-      utils: '/api/utils',
-    },
-  });
+  res.json({ message: 'ParkChain API is running ✅' });
 });
 
 app.get('/health', (req, res) => {
@@ -82,7 +71,7 @@ app.get('/health/db', async (req, res) => {
     const tableDetails = [];
     for (const row of tablesResult.rows) {
       const countResult = await query(
-        `SELECT COUNT(*) as count FROM ${row.table_name}`
+        `SELECT COUNT(*) as count FROM "${row.table_name}"`
       );
       tableDetails.push({
         name: row.table_name,
@@ -96,13 +85,14 @@ app.get('/health/db', async (req, res) => {
       tables: tableDetails,
     });
   } catch (error) {
+    console.error('DB health check error:', error);
     res.status(500).json({ status: 'error', error: error.message });
   }
 });
 
-// ─────────────────────────────────────────────
-// ADMIN LOGIN
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────
+// 4. ADMIN LOGIN  (at /auth/admin/login)
+// ─────────────────────────────────────────────────────────
 app.post('/auth/admin/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -114,11 +104,11 @@ app.post('/auth/admin/login', async (req, res) => {
       });
     }
 
-    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminEmail    = process.env.ADMIN_EMAIL;
     const adminPassword = process.env.ADMIN_PASSWORD;
 
     if (!adminEmail || !adminPassword) {
-      console.error('❌ ADMIN_EMAIL or ADMIN_PASSWORD not set in environment');
+      console.error('❌ ADMIN_EMAIL or ADMIN_PASSWORD not set');
       return res.status(500).json({
         success: false,
         message: 'Server configuration error',
@@ -130,10 +120,7 @@ app.post('/auth/admin/login', async (req, res) => {
         success: true,
         message: 'Login successful',
         token: 'admin-jwt-token-placeholder',
-        user: {
-          email,
-          role: 'admin',
-        },
+        user: { email, role: 'admin' },
       });
     }
 
@@ -150,34 +137,47 @@ app.post('/auth/admin/login', async (req, res) => {
   }
 });
 
-// ─────────────────────────────────────────────
-// API ROUTES  (registered ONCE)
-// ─────────────────────────────────────────────
-app.use('/api/auth/xumm', require('./routes/XummRoutes'));
-app.use('/api/auth', require('./routes/AuthRoutes'));
-app.use('/api/users', require('./routes/UserRoutes'));
-app.use('/api/spots', require('./routes/SpotRoutes'));
-app.use('/api/bookings/check', require('./routes/BookingCheckRoutes'));
-app.use('/api/bookings', require('./routes/BookingRoutes'));
-app.use('/api/payments', require('./routes/PaymentRoutes'));
-app.use('/api/navigation', require('./routes/NavigationRoutes'));
-app.use('/api/notifications', require('./routes/NotificationRoutes'));
-app.use('/api/reviews', require('./routes/ReviewRoutes'));
-app.use('/api/utils', require('./routes/UtilsRoutes'));
+// ─────────────────────────────────────────────────────────
+// 5. NOTIFICATIONS  (at /notifications)
+// ─────────────────────────────────────────────────────────
+app.get('/notifications', (req, res) => {
+  res.json({ success: true, notifications: [] });
+});
 
-// KYC / Didit
-app.use('/api', require('./routes/KycRoutes'));
-app.use('/api/kyb', require('./routes/KybRoutes'));
+// ─────────────────────────────────────────────────────────
+// 6. API ROUTES  — registered ONCE, correct order
+// ─────────────────────────────────────────────────────────
+
+// xumm MUST come before /api/auth (more specific first)
+app.use('/api/auth/xumm',      require('./routes/XummRoutes'));
+app.use('/api/auth',           require('./routes/AuthRoutes'));
+
+app.use('/api/users',          require('./routes/UserRoutes'));
+app.use('/api/spots',          require('./routes/SpotRoutes'));
+
+// check MUST come before /api/bookings (more specific first)
+app.use('/api/bookings/check', require('./routes/BookingCheckRoutes'));
+app.use('/api/bookings',       require('./routes/BookingRoutes'));
+
+app.use('/api/payments',       require('./routes/PaymentRoutes'));
+app.use('/api/navigation',     require('./routes/NavigationRoutes'));
+app.use('/api/notifications',  require('./routes/NotificationRoutes'));
+app.use('/api/reviews',        require('./routes/ReviewRoutes'));
+app.use('/api/utils',          require('./routes/UtilsRoutes'));
+
+// KYC / Didit webhooks
+app.use('/api/kyb',            require('./routes/KybRoutes'));
+app.use('/api',                require('./routes/KycRoutes'));
 
 // Admin
-app.use('/api/admin/kyb', require('./routes/AdminKybRoutes'));
+app.use('/api/admin/kyb',      require('./routes/AdminKybRoutes'));
 
 // Seller
-app.use('/api/seller/kyb', require('./routes/SellerKybRoutes'));
+app.use('/api/seller/kyb',     require('./routes/SellerKybRoutes'));
 
-// ─────────────────────────────────────────────
-// 404 HANDLER
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────
+// 7. 404 HANDLER
+// ─────────────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({ error: `Route ${req.method} ${req.url} not found` });
 });
