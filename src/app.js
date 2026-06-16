@@ -6,11 +6,33 @@ const { query } = require('./config/db');
 const app = express();
 
 // --- MIDDLEWARE ---
-app.use(cors( ));
+app.options('*', cors());
+
+app.use(cors({
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      'https://park-chain-k8rgfu13k-dhanas-projects-3283d047.vercel.app',
+      'https://park-chain-web.vercel.app',
+      'http://localhost:3000',
+    ];
+
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    console.log('❌ CORS blocked origin:', origin);
+    return callback(new Error(`CORS policy: Origin ${origin} not allowed`));
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+}));
+
 app.use(express.json());
 
 // --- ROUTES ---
-
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -75,10 +97,74 @@ app.use('/api/notifications', require('./routes/NotificationRoutes'));
 // Reviews Routes
 app.use('/api/reviews', require('./routes/ReviewRoutes'));
 
-// API Routes
+
+app.get('/notifications', async (req, res) => {
+  try {
+    // You can later replace this with real database query
+    res.json({
+      success: true,
+      notifications: []
+    });
+  } catch (error) {
+    res.json({
+      success: true,
+      notifications: []
+    });
+  }
+});
+
+// Admin Login route (fixes: POST /auth/admin/login)
+app.post('/auth/admin/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and password are required'
+      });
+    }
+
+    // Get credentials from environment variables
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+
+    if (!adminEmail || !adminPassword) {
+      console.error('❌ ADMIN_EMAIL or ADMIN_PASSWORD not set in .env');
+      return res.status(500).json({
+        success: false,
+        message: 'Server configuration error'
+      });
+    }
+
+    if (email === adminEmail && password === adminPassword) {
+      return res.json({
+        success: true,
+        message: 'Login successful',
+        token: 'admin-jwt-token-placeholder',
+        user: {
+          email: email,
+          role: 'admin'
+        }
+      });
+    }
+
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid credentials'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server error during login'
+    });
+  }
+});
+
+// ==================== API ROUTES ====================
 app.use('/api/auth', require('./routes/AuthRoutes'));
 app.use('/api/users', require('./routes/UserRoutes'));
-app.use('/api/auth/xumm', require('./routes/XummRoutes')); 
+app.use('/api/auth/xumm', require('./routes/XummRoutes'));
 app.use('/api/spots', require('./routes/SpotRoutes'));
 app.use('/api/bookings', require('./routes/BookingRoutes'));
 app.use('/api/bookings/check', require('./routes/BookingCheckRoutes'));
