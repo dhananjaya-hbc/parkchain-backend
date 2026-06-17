@@ -17,14 +17,25 @@ const serviceAcc = {
 }
 
 if (!admin.apps.length) {
-  if (process.env.NODE_ENV === 'test' || !process.env.FIREBASE_PRIVATE_KEY) {
-    admin.initializeApp({
-      projectId: process.env.FIREBASE_PROJECT_ID || 'mock-project-id'
-    });
-  } else {
-    admin.initializeApp({
-      credential: admin.credential.cert(JSON.parse(JSON.stringify(serviceAcc))),
-    });
+  try {
+    if (process.env.NODE_ENV === 'test' || !process.env.FIREBASE_PRIVATE_KEY || !process.env.FIREBASE_CLIENT_EMAIL) {
+      admin.initializeApp({
+        projectId: process.env.FIREBASE_PROJECT_ID || 'mock-project-id'
+      });
+    } else {
+      admin.initializeApp({
+        credential: admin.credential.cert(JSON.parse(JSON.stringify(serviceAcc))),
+      });
+    }
+  } catch (error) {
+    console.error('Firebase Admin SDK failed to initialize:', error.message);
+    try {
+      admin.initializeApp({
+        projectId: process.env.FIREBASE_PROJECT_ID || 'mock-project-id'
+      });
+    } catch (fallbackError) {
+      console.error('Firebase fallback initialization failed:', fallbackError.message);
+    }
   }
 }
 
