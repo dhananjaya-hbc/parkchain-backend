@@ -6,11 +6,18 @@ require('dotenv').config();
 
 class XummService {
   constructor() {
-    this.sdk = new XummSdk(
-      process.env.XUMM_API_KEY,
-      process.env.XUMM_API_SECRET
-    );
-    console.log('XUMM SDK initialized');
+    this._sdk = null;
+  }
+
+  get sdk() {
+    if (!this._sdk) {
+      this._sdk = new XummSdk(
+        process.env.XUMM_API_KEY || 'mock-key',
+        process.env.XUMM_API_SECRET || 'mock-secret'
+      );
+      console.log('XUMM SDK initialized');
+    }
+    return this._sdk;
   }
 
   //Create a sign-in request
