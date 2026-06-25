@@ -123,11 +123,32 @@ const getSellerEarningsChart = async (req, res) => {
   }
 };
 
+// GET /api/payments/admin/revenue-chart?period=week|month|year
+const getAdminRevenueChart = async (req, res) => {
+  try {
+    const rawPeriod = String(req.query.period || 'week').toLowerCase();
+    const period = ['week', 'month', 'year'].includes(rawPeriod) ? rawPeriod : 'week';
+
+    const series = await Transaction.getAdminRevenueSeries(period);
+
+    return res.json({
+      period,
+      currency: 'XRP',
+      labels: series.labels,
+      values: series.values,
+    });
+  } catch (error) {
+    console.error('Get admin revenue chart error:', error.message);
+    return res.status(500).json({ error: 'Failed to fetch admin revenue chart.' });
+  }
+};
+
 module.exports = {
   getBalance,
   getAdminBalance,
   getTransactions,
   getSellerTransactions,
   getSellerEarningsChart,
+  getAdminRevenueChart, // Add this line
   verifyTransaction
 };

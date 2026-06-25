@@ -194,6 +194,74 @@ class Transaction {
       values: result.rows.map((row) => Number(row.total)),
     };
   }
+
+  // Get admin revenue series for dashboard chart
+  static async getAdminRevenueSeries(period = 'week') {
+    const adminTxCte = `WITH admin_tx AS (
+    SELECT t.created_at, t.amount_xrp
+    FROM transactions t
+    WHERE t.tx_type = 'driver_to_admin'
+      AND t.status = 'validated'
+  )`;
+    const config = {
+      week: {
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        sql: `${adminTxCte},
+        days AS (
+          SELECT generate_series(
+            date_trunc('week', NOW()),
+            date_trunc('week', NOW()) + INTERVAL '6 day',
+            INTERVAL '1 day'
+          ) AS bucket_start
+        )
+        SELECT COALESCE(SUM(at.amount_xrp), 0) AS total
+        FROM days d
+        LEFT JOIN admin_tx at
+          ON at.created_at >= d.bucket_start
+         AND at.created_at < d.bucket_start + INTERVAL '1 day'
+        GROUP BY d.bucket_start
+        ORDER BY d.bucket_start`,
+      },
+      month: {
+        labels: ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4'],
+        sql: `${adminTxCte},
+        weeks AS (
+          SELECT generate_series(
+            date_trunc('week', NOW()) - INTERVAL '3 week',
+            date_trunc('week', NOW()),
+            INTERVAL '1 week'
+          ) AS bucket_start
+        )
+        SELECT COALESCE(SUM(at.amount_xrp), 0) AS total
+        FROM weeks w
+        LEFT JOIN admin_tx at
+          ON at.created_at >= w.bucket_start
+         AND at.created_at < w.bucket_start + INTERVAL '1 week'
+        GROUP BY w.bucket_start
+        ORDER BY w.bucket_start`,
+      },
+      year: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        sql: `${adminTxCte},
+        months AS (
+          SELECT generate_series(1, 12) AS month_no
+        )
+        SELECT COALESCE(SUM(at.amount_xrp), 0) AS total
+        FROM months m
+        LEFT JOIN admin_tx at
+          ON EXTRACT(MONTH FROM at.created_at)::INT = m.month_no
+         AND EXTRACT(YEAR FROM at.created_at) = EXTRACT(YEAR FROM NOW())
+        GROUP BY m.month_no
+        ORDER BY m.month_no`,
+      },
+    };
+    const selected = config[period] || config.year;
+    const result = await query(selected.sql);
+    return {
+      labels: selected.labels,
+      values: result.rows.map((row) => Number(row.total)),
+    };
+  }
 }
 
 module.exports = Transaction;

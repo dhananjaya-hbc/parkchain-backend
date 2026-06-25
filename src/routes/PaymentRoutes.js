@@ -19,5 +19,6 @@ router.get('/verify/:txHash', PaymentController.verifyTransaction);
 
 // Admin only
 router.get('/admin/balance', roleMiddleware('admin'), PaymentController.getAdminBalance);
+router.get('/admin/revenue-chart', roleMiddleware('admin'), PaymentController.getAdminRevenueChart); // Add this line
 
 module.exports = router;
