@@ -9,7 +9,7 @@ const { calculateDistance } = require('../utils/geoUtils');
 const checkIn = async (req, res) => {
   try {
     const { driverLocation } = req.body;
-    const CHECK_IN_RADIUS_TOLERANCE_METERS = 10;
+    const CHECK_IN_RADIUS_TOLERANCE_METERS = 30;
 
     if (!driverLocation || !driverLocation.lat || !driverLocation.lng) {
       return res.status(400).json({
