@@ -9,7 +9,7 @@ const EVENTS = {
   // Booking
   BOOKING_CONFIRMED_DRIVER: "BOOKING_CONFIRMED_DRIVER",
   BOOKING_CONFIRMED_OWNER: "BOOKING_CONFIRMED_OWNER",
-  
+
   BOOKING_CANCELLED: "BOOKING_CANCELLED",
   BOOKING_STARTED: "BOOKING_STARTED",
   BOOKING_ENDED: "BOOKING_ENDED",
@@ -34,14 +34,30 @@ const EVENTS = {
   SPOT_REJECTED: "SPOT_REJECTED",
   SPOT_AVAILABLE: "SPOT_AVAILABLE",
   SPOT_UNAVAILABLE: "SPOT_UNAVAILABLE",
+
+  CHECK_IN:"CHECK_IN",
+  CHECK_OUT:"CHECK_OUT",
+  BOOKING_STARTING_SOON: "BOOKING_STARTING_SOON"
 };
 
 // ─── Message templates ───────────────────────────────────────────────────────
 
 const templates = {
+  [EVENTS.BOOKING_STARTING_SOON]: (d) => ({
+    title: "Booking Starting Soon ⏰",
+    body: `Your booking for ${d.spotName} will start in ${d.minutesLeft} minutes.`,
+  }),
   [EVENTS.NEW_KYB_REQUEST]: (d) => ({
     title: "New KYB Submission 🏢",
     body: `${d.businessName} has submitted a KYB application. Review needed.`,
+  }),
+  [EVENTS.CHECK_IN]: (d) => ({
+    title: "You Checked In",
+    body: `Your booking for ${d.spotName} has been started. You can now park.`,
+  }),
+  [EVENTS.CHECK_OUT]: (d) => ({
+    title: "You Checked Out",
+    body: `Your booking for ${d.spotName} has been ended. You can now exit the parking.`,
   }),
 
   //----booking-----//

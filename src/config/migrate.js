@@ -76,6 +76,11 @@ const migrate = async () => {
       ADD COLUMN IF NOT EXISTS block_reason TEXT;
     `);
 
+    await pool.query(`
+      ALTER TABLE bookings
+      ADD COLUMN IF NOT EXISTS reminder_sent BOOLEAN DEFAULT false;
+    `);
+
     console.log('✅ All tables created successfully!\n');
 
     // Verify: list all tables
