@@ -9,7 +9,8 @@ const buildProfileResponse = (user) => {
     phoneNumber: user.phone || null,
     licenseNo: user.license_no || null,
     profileImageUrl: user.profile_image || null,
-    profileCompleted: User.isProfileCompleted(user)
+    profileCompleted: User.isProfileCompleted(user),
+    walletAddress: user.wallet_address || null
   };
 
   if (user.vehicle_type) {
