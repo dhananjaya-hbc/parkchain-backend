@@ -1,7 +1,4 @@
 // src/models/Review.js
-// ============================================
-// REVIEW MODEL
-// ============================================
 
 const { query } = require('../config/db');
 
@@ -81,8 +78,8 @@ class Review {
   static async findBySpot(spotId, { limit = 20, offset = 0 }) {
     const result = await query(
       `SELECT r.*, 
-              d.name as driver_name,
-              d.profile_image as driver_image,
+              d.name as user_name,
+              d.profile_image as user_profile_image,
               s.title as spot_title,
               s.address as spot_address
        FROM reviews r

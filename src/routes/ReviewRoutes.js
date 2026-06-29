@@ -22,6 +22,7 @@ router.get('/:id', ReviewController.getReviewById);
 
 // GET - Get reviews for a specific spot (public, shows spot ratings)
 router.get('/spot/:spotId', ReviewController.getReviewsBySpot);
+router.get('/booking/:bookingId', ReviewController.getReviewByBooking);
 
 // ─── DRIVER ROUTES ───────────────────────────────────────────────────────
 

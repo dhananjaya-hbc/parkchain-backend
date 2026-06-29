@@ -67,9 +67,22 @@ class Spot {
   // ============================================
   static async findAvailable() {
     const result = await query(
-      `SELECT s.*, u.name AS owner_name
+      `WITH ReviewStats AS (
+         SELECT 
+           spot_id, 
+           AVG(rating) AS average_rating,
+           COUNT(id) AS total_reviews
+         FROM reviews
+         GROUP BY spot_id
+       )
+       SELECT 
+         s.*, 
+         u.name AS owner_name,
+         COALESCE(rs.average_rating, 0) AS average_rating,
+         COALESCE(rs.total_reviews, 0) AS total_reviews
        FROM spots s
        JOIN users u ON s.owner_id = u.id
+       LEFT JOIN ReviewStats rs ON s.id = rs.spot_id
        WHERE s.is_available = true
          AND s.is_approved = true
        ORDER BY s.created_at DESC`
@@ -208,23 +221,41 @@ class Spot {
   // UPDATE spot details (seller action)
   // ============================================
   static async update(spotId, ownerId, updates) {
-    const { title, description, address, latitude, longitude, 
-            pricesPerHour, imageUrls } = updates;
+    const {
+      title, description, address, latitude, longitude,
+      vehicleTypes, slotsPerType, pricesPerHour,
+      totalSlots, imageUrls,
+    } = updates;
+    // When slot structure changes, reset available_slots = totalSlots
+    // (sweep-line already guarantees this is safe)
+    const availableSlots = totalSlots !== undefined ? totalSlots : undefined;
 
     const result = await query(
       `UPDATE spots
-       SET title = COALESCE($1, title),
-           description = COALESCE($2, description),
-           address = COALESCE($3, address),
-           latitude = COALESCE($4, latitude),
-           longitude = COALESCE($5, longitude),
-           prices_per_hour = COALESCE($6, prices_per_hour),
-             image_urls = COALESCE($7, image_urls),
-           updated_at = NOW()
-           WHERE id = $8 AND owner_id = $9
+       SET title           = COALESCE($1,  title),
+           description     = COALESCE($2,  description),
+           address         = COALESCE($3,  address),
+           latitude        = COALESCE($4,  latitude),
+           longitude       = COALESCE($5,  longitude),
+           vehicle_types   = COALESCE($6,  vehicle_types),
+           slots_per_type  = COALESCE($7,  slots_per_type),
+           prices_per_hour = COALESCE($8,  prices_per_hour),
+           total_slots     = COALESCE($9,  total_slots),
+           available_slots = COALESCE($10, available_slots),
+           image_urls      = COALESCE($11, image_urls),
+           updated_at      = NOW()
+       WHERE id = $12 AND owner_id = $13
        RETURNING *`,
-      [title, description, address, latitude, longitude,
-           pricesPerHour, imageUrls, spotId, ownerId]
+      [
+        title, description, address, latitude, longitude,
+        vehicleTypes   || null,
+        slotsPerType   || null,
+        pricesPerHour  || null,
+        totalSlots     !== undefined ? totalSlots     : null,
+        availableSlots !== undefined ? availableSlots : null,
+        imageUrls      || null,
+        spotId, ownerId,
+      ]
     );
     return result.rows[0] || null;
   }

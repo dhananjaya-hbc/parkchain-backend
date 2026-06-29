@@ -56,6 +56,26 @@ const migrate = async () => {
       DROP COLUMN IF EXISTS is_blocked;
     `);
 
+    await pool.query(`
+      ALTER TABLE spots
+      ADD COLUMN IF NOT EXISTS is_blocked_by_seller BOOLEAN DEFAULT false;
+    `);
+
+    await pool.query(`
+      ALTER TABLE spots
+      ADD COLUMN IF NOT EXISTS block_start_time TIMESTAMP WITH TIME ZONE;
+    `);
+
+    await pool.query(`
+      ALTER TABLE spots
+      ADD COLUMN IF NOT EXISTS block_end_time TIMESTAMP WITH TIME ZONE;
+    `);
+
+    await pool.query(`
+      ALTER TABLE spots
+      ADD COLUMN IF NOT EXISTS block_reason TEXT;
+    `);
+
     console.log('✅ All tables created successfully!\n');
 
     // Verify: list all tables

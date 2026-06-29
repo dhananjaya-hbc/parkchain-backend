@@ -3,6 +3,7 @@
 
 const app = require('./src/app');
 const { pool } = require('./src/config/db');
+const initUnblockCron = require('./src/cron/unblockCron');
 require('dotenv').config();
 
 const PORT = process.env.PORT || 3001;
@@ -17,6 +18,9 @@ const startServer = async () => {
     // If we reach this line, the connection worked!
     console.log('Database connected successfully!');
     console.log('Database time:', result.rows[0].now);
+
+    // Initialize cron jobs
+    initUnblockCron();
 
     // Now start the Express server
     app.listen(PORT, () => {

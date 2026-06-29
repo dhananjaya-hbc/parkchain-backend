@@ -12,6 +12,7 @@ const ReviewController = {
   // ============================================
   async createReview(req, res) {
     try {
+      console.log('[ReviewController] createReview called with body:', req.body);
       const { bookingId, rating, comment } = req.body;
       const driverId = req.user.id;
 
@@ -98,6 +99,26 @@ const ReviewController = {
   // ============================================
   // GET /api/reviews/spot/:spotId - Get reviews for a specific spot
   // ============================================
+
+  async getReviewByBooking(req, res) {
+    try {
+      const { bookingId } = req.params;
+
+      const review = await Review.findByBooking(bookingId);
+      if (!review) {
+        return res.status(404).json({ message: 'Review not found' });
+      }
+
+      return res.status(200).json({
+        message: 'Review retrieved successfully',
+        data: review,
+      });
+    } catch (err) {
+      console.error('[ReviewController] getReviewByBooking error:', err.message);
+      return res.status(500).json({ message: 'Failed to fetch review' });
+    }
+  },
+
   async getReviewsBySpot(req, res) {
     try {
       const { spotId } = req.params;

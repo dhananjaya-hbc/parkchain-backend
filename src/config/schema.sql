@@ -90,6 +90,11 @@ CREATE TABLE IF NOT EXISTS spots (
     total_slots INTEGER DEFAULT 1,
     available_slots INTEGER DEFAULT 1,
 
+    is_blocked_by_seller BOOLEAN DEFAULT false,
+    block_start_time TIMESTAMP WITH TIME ZONE,
+    block_end_time TIMESTAMP WITH TIME ZONE,
+    block_reason TEXT,
+
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
