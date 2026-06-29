@@ -154,7 +154,7 @@ const ReviewController = {
   // ============================================
   async getSellerReviews(req, res) {
     try {
-      const sellerId = req.user.id;
+      const sellerId = (req.user.role === 'admin' && req.query.sellerId) ? req.query.sellerId : req.user.id;
       const limit = Math.min(parseInt(req.query.limit) || 20, 100);
       const offset = parseInt(req.query.offset) || 0;
 

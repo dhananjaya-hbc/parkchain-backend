@@ -16,7 +16,7 @@ const initBookingReminderCron = () => {
          WHERE b.booking_status = 'confirmed'
            AND b.reminder_sent = false
            AND b.start_time > NOW()
-           AND b.start_time <= NOW() + INTERVAL '100 minutes'`
+           AND b.start_time <= NOW() + INTERVAL '20 minutes'`
       );
 
       const bookings = result.rows;

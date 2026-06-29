@@ -38,7 +38,7 @@ router.delete('/:id', ReviewController.deleteReview);
 // ─── SELLER ROUTES ──────────────────────────────────────────────────────
 
 // GET - Get all reviews for seller's spots
-router.get('/seller/me', roleMiddleware('seller'), ReviewController.getSellerReviews);
+router.get('/seller/me', roleMiddleware('seller','admin'), ReviewController.getSellerReviews);
 
 // ─── ADMIN ROUTES ──────────────────────────────────────────────────────
 
