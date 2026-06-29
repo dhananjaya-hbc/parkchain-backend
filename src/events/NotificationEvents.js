@@ -7,7 +7,7 @@ const { sendMulticast } = require("../services/FirebaseService");
 
 const EVENTS = {
   // Booking
-  BOOKING_CONFIRMED: "BOOKING_CONFIRMED_DRIVER",
+  BOOKING_CONFIRMED_DRIVER: "BOOKING_CONFIRMED_DRIVER",
   BOOKING_CONFIRMED: "BOOKING_CONFIRMED_OWNER",
   BOOKING_CANCELLED: "BOOKING_CANCELLED",
   BOOKING_STARTED: "BOOKING_STARTED",
@@ -158,6 +158,7 @@ const saveNotificationToDb = async (userId, title, body, data = {}) => {
  * });
  */
 const fireEvent = async (eventName, userId, data = {}) => {
+  console.log(`[Notifications] Firing event ${eventName} for user ${userId}`);
   if (!userId) return;
 
   const template = templates[eventName];
