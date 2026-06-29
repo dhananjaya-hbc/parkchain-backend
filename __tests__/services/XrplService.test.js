@@ -206,12 +206,13 @@ describe('XrplService', () => {
             expect(result.success).toBe(false);
         });
 
-        it('should throw error if ADMIN_WALLET_SEED not set', async () => {
+        it('should return simulated success if ADMIN_WALLET_SEED not set', async () => {
             delete process.env.ADMIN_WALLET_SEED;
 
-            await expect(
-                service.paySeller('rSellerWallet123', 8.0, 'booking-uuid')
-            ).rejects.toThrow('ADMIN_WALLET_SEED not set in .env!');
+            const result = await service.paySeller('rSellerWallet123', 8.0, 'booking-uuid');
+            expect(result.success).toBe(true);
+            expect(result.txHash).toContain('simulated_tx_');
+            expect(result.resultCode).toBe('tesSUCCESS');
         });
     });
     // ADD inside describe('XrplService')
