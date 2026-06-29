@@ -4,6 +4,7 @@
 const app = require('./src/app');
 const { pool } = require('./src/config/db');
 const initUnblockCron = require('./src/cron/unblockCron');
+const initBookingCleanupCron = require('./src/cron/bookingCleanupCron');
 require('dotenv').config();
 
 const PORT = process.env.PORT || 3001;
@@ -21,6 +22,7 @@ const startServer = async () => {
 
     // Initialize cron jobs
     initUnblockCron();
+    initBookingCleanupCron();
 
     // Now start the Express server
     app.listen(PORT, () => {
