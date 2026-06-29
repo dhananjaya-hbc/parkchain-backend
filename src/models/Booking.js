@@ -133,11 +133,49 @@ class Booking {
               b.actual_start_time + (b.expected_duration_hours * INTERVAL '1 hour') AS expiry_time,
               s.title AS spot_title,
               d.name AS driver_name,
-              o.name AS owner_name
+              o.name AS owner_name,
+              COALESCE(dc.cancelled_count, 0) AS cancelled_count,
+              COALESCE(df.frequency_count, 0) AS frequency_count,
+              COALESCE(sa.avg_price, 0) AS spot_avg_price,
+              COALESCE(fp.failed_payment_count, 0) AS failed_payment_count,
+              CASE WHEN b.booking_status IN ('pending', 'confirmed', 'active') THEN
+                (SELECT COUNT(*) FROM bookings b6 
+                 WHERE b6.driver_id = b.driver_id 
+                   AND b6.start_time < b.end_time 
+                   AND b6.end_time > b.start_time 
+                   AND b6.booking_status IN ('pending', 'confirmed', 'active'))
+              ELSE 0 END AS overlap_count
        FROM bookings b
        JOIN spots s ON b.spot_id = s.id
        JOIN users d ON b.driver_id = d.id
        JOIN users o ON b.owner_id = o.id
+       LEFT JOIN (
+         SELECT driver_id, COUNT(*) as cancelled_count
+         FROM bookings
+         WHERE booking_status = 'cancelled'
+           AND created_at > NOW() - INTERVAL '24 hours'
+         GROUP BY driver_id
+       ) dc ON dc.driver_id = b.driver_id
+       LEFT JOIN (
+         SELECT driver_id, COUNT(*) as frequency_count
+         FROM bookings
+         WHERE booking_status != 'cancelled'
+           AND created_at > NOW() - INTERVAL '1 hour'
+         GROUP BY driver_id
+       ) df ON df.driver_id = b.driver_id
+       LEFT JOIN (
+         SELECT spot_id, AVG(total_price_xrp) as avg_price
+         FROM bookings
+         WHERE booking_status != 'cancelled'
+         GROUP BY spot_id
+       ) sa ON sa.spot_id = b.spot_id
+       LEFT JOIN (
+         SELECT driver_id, COUNT(*) as failed_payment_count
+         FROM bookings
+         WHERE payment_status = 'failed'
+           AND created_at > NOW() - INTERVAL '7 days'
+         GROUP BY driver_id
+       ) fp ON fp.driver_id = b.driver_id
        ORDER BY b.created_at DESC`
     );
     return result.rows;

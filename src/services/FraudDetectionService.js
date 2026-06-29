@@ -249,6 +249,64 @@ class FraudDetectionService {
 
     return { score: 0, warning: null, detail: 'No overlapping bookings' };
   }
+
+  // ============================================
+  // SYNCHRONOUS PRECOMPUTED RISK ASSESSMENT
+  // ============================================
+  calculateRiskFromPrecomputed(booking) {
+    if (!['pending', 'confirmed', 'active'].includes(booking.booking_status)) {
+      return { riskScore: 0, riskLevel: 'low' };
+    }
+
+    // 1. Cancelled Bookings Score
+    const cancelledCount = parseInt(booking.cancelled_count) || 0;
+    let cancelledScore = 0;
+    if (cancelledCount >= 3) cancelledScore = 25;
+    else if (cancelledCount >= 2) cancelledScore = 10;
+
+    // 2. Booking Frequency Score
+    const frequencyCount = parseInt(booking.frequency_count) || 0;
+    let frequencyScore = 0;
+    if (frequencyCount >= 5) frequencyScore = 30;
+    else if (frequencyCount >= 3) frequencyScore = 15;
+
+    // 3. Duration Score
+    const start = new Date(booking.start_time);
+    const end = new Date(booking.end_time);
+    const durationHours = (end - start) / (1000 * 60 * 60);
+    let durationScore = 0;
+    if (durationHours > 12) durationScore = 20;
+    else if (durationHours > 8) durationScore = 10;
+
+    // 4. Unusual Amount Score
+    const avgPrice = parseFloat(booking.spot_avg_price) || 0;
+    const amount = parseFloat(booking.total_price_xrp);
+    let amountScore = 0;
+    if (avgPrice > 0 && amount > avgPrice * 3) amountScore = 20;
+
+    // 5. Failed Payments Score
+    const failedCount = parseInt(booking.failed_payment_count) || 0;
+    let failedScore = 0;
+    if (failedCount >= 3) failedScore = 25;
+    else if (failedCount >= 1) failedScore = 10;
+
+    // 6. Driver Overlap Score
+    const overlapCount = parseInt(booking.overlap_count) || 0;
+    let overlapScore = 0;
+    if (overlapCount >= 2) overlapScore = 25;
+    else if (overlapCount >= 1) overlapScore = 10;
+
+    const riskScore = Math.min(
+      cancelledScore + frequencyScore + durationScore + amountScore + failedScore + overlapScore,
+      100
+    );
+
+    let riskLevel = 'low';
+    if (riskScore > 60) riskLevel = 'high';
+    else if (riskScore > 30) riskLevel = 'medium';
+
+    return { riskScore, riskLevel };
+  }
 }
 
 module.exports = new FraudDetectionService();

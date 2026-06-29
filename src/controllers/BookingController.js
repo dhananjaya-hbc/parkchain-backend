@@ -234,9 +234,27 @@ const getBookings = async (req, res) => {
       case 'seller':
         bookings = await Booking.findByOwner(req.user.id, status);
         break;
-      case 'admin':
-        bookings = await Booking.findAll();
+      case 'admin': {
+        const rawBookings = await Booking.findAll();
+        bookings = rawBookings.map((b) => {
+          try {
+            const fraud = FraudDetectionService.calculateRiskFromPrecomputed(b);
+            return {
+              ...b,
+              fraud_score: fraud.riskScore,
+              fraud_level: fraud.riskLevel
+            };
+          } catch (e) {
+            console.error(`Error calculating fraud for booking ${b.id}:`, e);
+            return {
+              ...b,
+              fraud_score: 0,
+              fraud_level: 'low'
+            };
+          }
+        });
         break;
+      }
       default:
         return res.status(403).json({ error: 'Invalid role.' });
     }
