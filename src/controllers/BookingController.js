@@ -122,6 +122,11 @@ const createBooking = async (req, res) => {
       sellerAmountXrp,
       vehicleNumber
     });
+    // console.log('Booking created:', booking);
+    //   await fireEvent(EVENTS.BOOKING_CONFIRMED_DRIVER, booking.driver_id, {
+    //   spotName: spot.title,
+    //   date:booking.start_time.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }),
+    // });
     res.status(201).json({
       message: 'Booking created. Proceed to payment.',
       booking,
@@ -143,15 +148,15 @@ const createBooking = async (req, res) => {
     });
     // Send notifications to owner and driver about new booking
     // to owner
-    await fireEvent(EVENTS.BOOKING_CONFIRMED_OWNER, booking.ownerId, {
-      spotName: spot.title,
-      date:booking.start_time.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }),
-    });
+    // await fireEvent(EVENTS.BOOKING_CONFIRMED_OWNER, booking.ownerId, {
+    //   spotName: spot.title,
+    //   date:booking.start_time.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }),
+    // });
     //to driver
-    await fireEvent(EVENTS.BOOKING_CONFIRMED_DRIVER, booking.driverId, {
-      spotName: spot.title,
-      date:booking.start_time.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }),
-    });
+    // await fireEvent(EVENTS.BOOKING_CONFIRMED_DRIVER, booking.driverId, {
+    //   spotName: spot.title,
+    //   date:booking.start_time.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }),
+    // });
 
   } catch (error) {
     console.error('createBooking error:', error);

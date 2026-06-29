@@ -7,8 +7,9 @@ const { sendMulticast } = require("../services/FirebaseService");
 
 const EVENTS = {
   // Booking
-  BOOKING_CONFIRMED: "BOOKING_CONFIRMED_DRIVER",
-  BOOKING_CONFIRMED: "BOOKING_CONFIRMED_OWNER",
+  BOOKING_CONFIRMED_DRIVER: "BOOKING_CONFIRMED_DRIVER",
+  BOOKING_CONFIRMED_OWNER: "BOOKING_CONFIRMED_OWNER",
+
   BOOKING_CANCELLED: "BOOKING_CANCELLED",
   BOOKING_STARTED: "BOOKING_STARTED",
   BOOKING_ENDED: "BOOKING_ENDED",
@@ -33,23 +34,42 @@ const EVENTS = {
   SPOT_REJECTED: "SPOT_REJECTED",
   SPOT_AVAILABLE: "SPOT_AVAILABLE",
   SPOT_UNAVAILABLE: "SPOT_UNAVAILABLE",
+
+  CHECK_IN:"CHECK_IN",
+  CHECK_OUT:"CHECK_OUT",
+  BOOKING_STARTING_SOON: "BOOKING_STARTING_SOON"
 };
 
 // ─── Message templates ───────────────────────────────────────────────────────
 
 const templates = {
+  [EVENTS.BOOKING_STARTING_SOON]: (d) => ({
+    title: "Booking Starting Soon ⏰",
+    body: `Your booking for ${d.spotName} will start in ${d.minutesLeft} minutes.`,
+  }),
   [EVENTS.NEW_KYB_REQUEST]: (d) => ({
     title: "New KYB Submission 🏢",
     body: `${d.businessName} has submitted a KYB application. Review needed.`,
   }),
+  [EVENTS.CHECK_IN]: (d) => ({
+    title: "You Checked In",
+    body: `Your booking for ${d.spotName} has been started. You can now park.`,
+  }),
+  [EVENTS.CHECK_OUT]: (d) => ({
+    title: "You Checked Out",
+    body: `Your booking for ${d.spotName} has been ended. You can now exit the parking.`,
+  }),
+
+  //----booking-----//
   [EVENTS.BOOKING_CONFIRMED_DRIVER]: (d) => ({
-    title: "Booking Confirmed ✅",
+    title: "Booking Confirmed",
     body: `Your booking for ${d.spotName} on ${d.date} is confirmed.`,
   }),
   [EVENTS.BOOKING_CONFIRMED_OWNER]: (d) => ({
-    title: "Booking Confirmed ✅",
-    body: `Your ${d.spotName} have a new booking on ${d.date} booked.`,
+    title: "New Booking Received",
+    body: `Your spot "${d.spotName}" have a new booking on ${d.date}.`,
   }),
+  //----Spots----//
   [EVENTS.SPOT_APPROVED]: (d) => ({
     title: "Spot Approved ✅",
     body: `Your spot "${d.spotName}" has been approved and is now live.`,
@@ -158,6 +178,7 @@ const saveNotificationToDb = async (userId, title, body, data = {}) => {
  * });
  */
 const fireEvent = async (eventName, userId, data = {}) => {
+  console.log(`[Notifications] Firing event ${eventName} for user ${userId}`);
   if (!userId) return;
 
   const template = templates[eventName];

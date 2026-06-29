@@ -55,6 +55,8 @@ const NotificationController = {
       const { rows: countResult } = await db.query(countQuery, countParams);
       const total = parseInt(countResult[0].count);
 
+      console.log("Notifications rows ",rows[0]);
+
       return res.status(200).json({
         message: "Notifications retrieved successfully",
         data: rows,

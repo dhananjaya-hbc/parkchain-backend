@@ -2,6 +2,7 @@
 
 const Booking = require('../models/Booking');
 const { calculateDistance } = require('../utils/geoUtils');
+const { fireEvent, EVENTS } = require('../events/NotificationEvents');
 
 // ============================================
 // PUT /api/bookings/:id/checkin — Check In (Geofenced)
@@ -44,6 +45,11 @@ const checkIn = async (req, res) => {
       });
     }
 
+    //FIRE EVENT FOR CHECK IN
+    await fireEvent(EVENTS.CHECK_IN, booking.user_id, {
+      spotName: booking.spot_name
+    });
+
     res.json({
       message: 'Checked in successfully. Parking timer started!',
       distance: Math.round(distance),
@@ -76,7 +82,11 @@ const checkOut = async (req, res) => {
     if (!booking) return res.status(400).json({ error: 'Check-out failed.' });
 
     const hasOvertime = parseFloat(booking.overtime_hours) > 0;
-
+    
+    //FIRE EVENT FOR CHECK OUT
+    await fireEvent(EVENTS.CHECK_OUT, booking.user_id, {
+      spotName: booking.spot_name
+    });
     res.json({
       message: hasOvertime
         ? `Checked out. You stayed ${booking.overtime_hours} hours extra.`

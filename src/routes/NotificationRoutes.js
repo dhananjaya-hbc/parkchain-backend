@@ -14,32 +14,22 @@ router.use(authMiddleware);
 
 // Register or refresh FCM token
 router.post('/token', FcmTokenController.register);
-
 // Remove a specific token (logout from device)
 router.delete('/token', FcmTokenController.remove);
-
 // List active tokens (useful for debugging)
 router.get('/tokens', FcmTokenController.list);
-
 // ─── Notification Retrieval Routes ──────────────────────────────────────────
-
 // Get all notifications for the user (with pagination)
 // ?limit=20&offset=0&read=true/false (optional)
 router.get('/', NotificationController.getNotifications);
-
 // Get count of unread notifications
 router.get('/unread', NotificationController.getUnreadCount);
-
 // Mark a specific notification as read
 router.put('/:id/read', NotificationController.markAsRead);
-
 // Mark all notifications as read
 router.put('/read-all', NotificationController.markAllAsRead);
-
 // Delete a specific notification
 router.delete('/:id', NotificationController.deleteNotification);
-
 // Delete all notifications
 router.delete('/', NotificationController.deleteAllNotifications);
-
 module.exports = router;

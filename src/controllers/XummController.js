@@ -1,8 +1,9 @@
 // src/controllers/XummController.js
-const jwt         = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 const xummService = require('../services/XummService');
-const User        = require('../models/User');
+const User = require('../models/User');
 require('dotenv').config();
+const { EVENTS, fireEvent } = require('../events/NotificationEvents');
 
 // ── Helper: Generate JWT token ────────────────────────
 const generateToken = (userId, role) => {
@@ -23,10 +24,10 @@ const login = async (req, res) => {
 
     // Return deepLink + uuid to Flutter
     res.json({
-      message:  'Open Xaman app to sign in',
-      uuid:     payload.uuid,      
-      deepLink: payload.deepLink,   
-      qrUrl:    payload.qrUrl      
+      message: 'Open Xaman app to sign in',
+      uuid: payload.uuid,
+      deepLink: payload.deepLink,
+      qrUrl: payload.qrUrl
     });
   } catch (error) {
     console.error('XUMM login error:', error.message);
@@ -55,7 +56,7 @@ const verify = async (req, res) => {
 
     if (!result.signed) {
       return res.status(401).json({
-        error:  'Sign-in not completed.',
+        error: 'Sign-in not completed.',
         reason: result.reason
       });
     }
@@ -115,9 +116,9 @@ const createPayment = async (req, res) => {
       });
     }
 
-    const token      = authHeader.split(' ')[1];
+    const token = authHeader.split(' ')[1];
     const jwtPayload = jwt.verify(token, process.env.JWT_SECRET);
-    const user       = await User.findById(jwtPayload.userId);
+    const user = await User.findById(jwtPayload.userId);
 
     if (!user) {
       return res.status(401).json({
@@ -127,7 +128,7 @@ const createPayment = async (req, res) => {
 
     // ── Check 3: Booking exists? ──────────────────────
     const Booking = require('../models/Booking');
-    const booking  = await Booking.findById(bookingId);
+    const booking = await Booking.findById(bookingId);
 
     if (!booking) {
       return res.status(404).json({
@@ -158,27 +159,27 @@ const createPayment = async (req, res) => {
     }
 
     // ── Convert XRP to drops ──────────────────────────
-    const totalXrp    = parseFloat(booking.total_price_xrp);
+    const totalXrp = parseFloat(booking.total_price_xrp);
     const amountDrops = Math.floor(totalXrp * 1000000).toString();
-     
+
     // ── Create Xaman payment request ──────────────────
     const payload = await xummService.createPaymentPayload(
-      user.wallet_address, 
-      adminAddress,         
-      amountDrops,         
-      bookingId            
+      user.wallet_address,
+      adminAddress,
+      amountDrops,
+      bookingId
     );
 
     // ── Update booking: unpaid → processing ───────────
     await Booking.updatePaymentStatus(bookingId, 'processing');
 
     res.json({
-      message:     'Payment request created. Approve in Xaman app.',
-      uuid:        payload.uuid,
-      deepLink:    payload.deepLink,
-      qrUrl:       payload.qrUrl,
+      message: 'Payment request created. Approve in Xaman app.',
+      uuid: payload.uuid,
+      deepLink: payload.deepLink,
+      qrUrl: payload.qrUrl,
       bookingId,
-      amount:      totalXrp,
+      amount: totalXrp,
       destination: adminAddress,
     });
 
@@ -224,7 +225,7 @@ const verifyPayment = async (req, res) => {
       await Booking.updateStatus(bookingId, 'cancelled');
 
       return res.status(400).json({
-        error:  'Payment not signed.',
+        error: 'Payment not signed.',
         reason: result.reason
       });
     }
@@ -233,7 +234,7 @@ const verifyPayment = async (req, res) => {
 
     // ── Get booking details ───────────────────────────
     const Booking = require('../models/Booking');
-    const booking  = await Booking.findById(bookingId);
+    const booking = await Booking.findById(bookingId);
 
     if (!booking) {
       return res.status(404).json({
@@ -243,39 +244,39 @@ const verifyPayment = async (req, res) => {
 
     // ── Get transaction hash from blockchain ──────────
     const payloadDetails = await xummService.getPayloadDetails(uuid);
-    const txHash         = payloadDetails?.response?.txid || null;
+    const txHash = payloadDetails?.response?.txid || null;
     console.log(`Transaction hash: ${txHash}`);
 
     // ── Setup constants ───────────────────────────────
-    const Transaction   = require('../models/Transaction');
-    const totalXrp      = parseFloat(booking.total_price_xrp);
-    const adminAddress  = process.env.ADMIN_WALLET_ADDRESS;
+    const Transaction = require('../models/Transaction');
+    const totalXrp = parseFloat(booking.total_price_xrp);
+    const adminAddress = process.env.ADMIN_WALLET_ADDRESS;
 
     // ── STEP 1: Record Driver → Admin transaction ─────
     if (txHash) {
       await Transaction.create({
         bookingId,
-        txHash,  
-        fromAddress: result.walletAddress, 
-        toAddress:   adminAddress,          
-        amountXrp:   totalXrp,
+        txHash,
+        fromAddress: result.walletAddress,
+        toAddress: adminAddress,
+        amountXrp: totalXrp,
         amountDrops: Math.floor(totalXrp * 1000000),
-        txType:      'driver_to_admin',
-        status:      'validated',
+        txType: 'driver_to_admin',
+        status: 'validated',
         ledgerIndex: 0,
-        resultCode:  'tesSUCCESS'
+        resultCode: 'tesSUCCESS'
       });
     }
 
     // ── STEP 2: Auto-pay Seller 80% ───────────────────
-    const sellerAmount    = parseFloat(booking.seller_amount_xrp);
+    const sellerAmount = parseFloat(booking.seller_amount_xrp);
     const adminCommission = parseFloat(booking.admin_fee_xrp);
-    const xrplService     = require('../services/XrplService');
+    const xrplService = require('../services/XrplService');
 
     const adminToSellerTx = await xrplService.paySeller(
-      booking.owner_wallet,  
-      sellerAmount,           
-      bookingId              
+      booking.owner_wallet,
+      sellerAmount,
+      bookingId
     );
 
     // ── If seller payment successful ──────────────────
@@ -284,15 +285,15 @@ const verifyPayment = async (req, res) => {
       // ── Record Admin → Seller transaction ──────────
       await Transaction.create({
         bookingId,
-        txHash:      adminToSellerTx.txHash,
-        fromAddress: adminAddress,           
-        toAddress:   booking.owner_wallet,   
-        amountXrp:   sellerAmount,
+        txHash: adminToSellerTx.txHash,
+        fromAddress: adminAddress,
+        toAddress: booking.owner_wallet,
+        amountXrp: sellerAmount,
         amountDrops: Math.floor(sellerAmount * 1000000),
-        txType:      'admin_to_seller',
-        status:      'validated',
+        txType: 'admin_to_seller',
+        status: 'validated',
         ledgerIndex: 0,
-        resultCode:  adminToSellerTx.resultCode
+        resultCode: adminToSellerTx.resultCode
       });
 
       // ── Update booking status ───────────────────────
@@ -301,30 +302,41 @@ const verifyPayment = async (req, res) => {
 
       console.log('Payment fully processed!');
 
+      //--Push Notification--to--driver
+      await fireEvent(EVENTS.BOOKING_CONFIRMED_DRIVER, booking.driver_id, {
+        spotName: booking.spot_title,
+        date: booking.start_time.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }),
+      });
+      //---To---owner
+      await fireEvent(EVENTS.BOOKING_CONFIRMED_OWNER, booking.owner_id, {
+        spotName: booking.spot_title,
+        date: booking.start_time.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }),
+      });
+
       // ── Return success to Flutter ───────────────────
       res.json({
         message: 'Payment successful! Booking confirmed.',
         booking: {
-          id:            bookingId,
-          spotTitle:     booking.spot_title,
+          id: bookingId,
+          spotTitle: booking.spot_title,
           bookingStatus: 'confirmed',
           paymentStatus: 'split_completed'
         },
         payment: {
-          totalPaid:      totalXrp,
+          totalPaid: totalXrp,
           adminCommission,
           sellerReceived: sellerAmount,
           transactions: {
             driverToAdmin: {
               txHash,
-              amount:    totalXrp,
+              amount: totalXrp,
               verifyUrl: txHash
                 ? `https://testnet.xrpl.org/transactions/${txHash}`
                 : null
             },
             adminToSeller: {
-              txHash:    adminToSellerTx.txHash,
-              amount:    sellerAmount,
+              txHash: adminToSellerTx.txHash,
+              amount: sellerAmount,
               verifyUrl: `https://testnet.xrpl.org/transactions/${adminToSellerTx.txHash}`
             }
           }
