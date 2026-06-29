@@ -8,7 +8,8 @@ const { sendMulticast } = require("../services/FirebaseService");
 const EVENTS = {
   // Booking
   BOOKING_CONFIRMED_DRIVER: "BOOKING_CONFIRMED_DRIVER",
-  BOOKING_CONFIRMED: "BOOKING_CONFIRMED_OWNER",
+  BOOKING_CONFIRMED_OWNER: "BOOKING_CONFIRMED_OWNER",
+  
   BOOKING_CANCELLED: "BOOKING_CANCELLED",
   BOOKING_STARTED: "BOOKING_STARTED",
   BOOKING_ENDED: "BOOKING_ENDED",
@@ -42,14 +43,17 @@ const templates = {
     title: "New KYB Submission 🏢",
     body: `${d.businessName} has submitted a KYB application. Review needed.`,
   }),
+
+  //----booking-----//
   [EVENTS.BOOKING_CONFIRMED_DRIVER]: (d) => ({
-    title: "Booking Confirmed ✅",
+    title: "Booking Confirmed",
     body: `Your booking for ${d.spotName} on ${d.date} is confirmed.`,
   }),
   [EVENTS.BOOKING_CONFIRMED_OWNER]: (d) => ({
-    title: "Booking Confirmed ✅",
-    body: `Your ${d.spotName} have a new booking on ${d.date} booked.`,
+    title: "New Booking Received",
+    body: `Your spot "${d.spotName}" have a new booking on ${d.date}.`,
   }),
+  //----Spots----//
   [EVENTS.SPOT_APPROVED]: (d) => ({
     title: "Spot Approved ✅",
     body: `Your spot "${d.spotName}" has been approved and is now live.`,
